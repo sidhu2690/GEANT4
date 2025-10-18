@@ -838,7 +838,7 @@ G4VPhysicalVolume* MyDetectorConstruction::Construct() {
     for (const auto& layer : layers) {
         G4double zPos = (layer.zMin + layer.zMax) / 2.0 * mm;
         G4double thickness = (layer.zMax - layer.zMin) * mm;
-        G4double outerR = layer.outerRadius * mm;
+        G4double outerR = layer.outerRadius * cm;
         
         // Skip if thickness too small
         if (thickness < 0.001*mm) continue;
