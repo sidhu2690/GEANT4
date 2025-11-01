@@ -5,7 +5,7 @@ This repository contains **Geant4-based simulation implementations** for studyin
 🔗 **HGCAL latest updates and development work:**  
 👉 [https://github.com/sidhu2690/hgcal_updates](https://github.com/sidhu2690/hgcal_updates)
 
-The framework provides a modular and flexible environment for realistic detector modeling, data analysis, and performance studies.
+The framework provides a modular and flexible environment for realistic detector modelling, data analysis, and performance studies.
 
 ---
 
@@ -16,7 +16,7 @@ The **GEANT4-HGCAL** simulation framework includes:
 - Detailed **CMS HGCAL geometry** implementation (silicon and scintillator layers)
 - Configurable **detector segmentation** and **material definitions**
 - Simulation of **energy deposition**, **particle propagation**, and **secondary production**
-- Built-in **ROOT** integration for analysis and visualization
+- Built-in **ROOT** integration for analysis and visualisation
 - Modular structure for extension to other detector architectures
 
 
