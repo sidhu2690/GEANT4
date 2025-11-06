@@ -1,3 +1,6 @@
+// For toy geometry
+
+
 #include <map>
 #include <vector>
 
