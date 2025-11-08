@@ -85,8 +85,8 @@ void layerwise_landau_fit() {
     for (Int_t i = 0; i < nValidLayers; i++) {
         Int_t iLayer = validLayers[i];
         layerArray[i] = iLayer;
-        filteredHitsArray[i] = filteredHitsPerLayer[iLayer] / 100;
-        filteredEnergyArray[i] = filteredTotalEnergyPerLayer[iLayer] / 100;
+        filteredHitsArray[i] = filteredHitsPerLayer[iLayer] / 100.0;
+        filteredEnergyArray[i] = filteredTotalEnergyPerLayer[iLayer] / 100.0;
     }
     
     std::ofstream outFile("energy_vs_layer.csv");
@@ -107,7 +107,7 @@ void layerwise_landau_fit() {
     gPad->SetGrid();
     
     TGraph *grHits = new TGraph(nValidLayers, layerArray, filteredHitsArray);
-    grHits->SetTitle("Number of Hits per Layer;Layer Number;Number of Hits");
+    grHits->SetTitle("Number of Hits per Layer;Layer Number;Number of Hits / 100");
     grHits->SetMarkerStyle(20);
     grHits->SetMarkerSize(1.2);
     grHits->SetMarkerColor(kBlue+1);
@@ -128,7 +128,7 @@ void layerwise_landau_fit() {
     gPad->SetGrid();
     
     TGraph *grEnergy = new TGraph(nValidLayers, layerArray, filteredEnergyArray);
-    grEnergy->SetTitle("Total Energy Deposited per Layer / 100;Layer Number;Total Energy Deposited (MeV) / 100");
+    grEnergy->SetTitle("Total Energy Deposited per Layer;Layer Number;Total Energy Deposited (MeV) / 100");
     grEnergy->SetMarkerStyle(21);
     grEnergy->SetMarkerSize(1.2);
     grEnergy->SetMarkerColor(kRed+1);
