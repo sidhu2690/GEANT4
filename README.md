@@ -3,7 +3,7 @@
 This repository contains **Geant4-based simulation implementations** for studying various detector architectures — with a particular focus on the **CMS High Granularity Calorimeter (HGCAL)** geometry.
 
 🔗 **HGCAL latest updates and development work:**  
-👉 [https://github.com/sidhu2690/hgcal_updates](https://github.com/sidhu2690/hgcal_updates)
+👉 [https://github.com/sidhu2690/hgcal_updates](https://github.com/sidhu2690/hgcal_updates) 
 
 The framework provides a modular and flexible environment for realistic detector modelling, data analysis, and performance studies.
 
