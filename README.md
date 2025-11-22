@@ -6,7 +6,7 @@ This repository contains **Geant4-based simulation implementations** for studyin
 👉 [https://github.com/sidhu2690/hgcal_updates](https://github.com/sidhu2690/hgcal_updates) 
 
 The framework provides a modular and flexible environment for realistic detector modelling, data analysis, and performance studies.
-
+![Visits](https://visitorbadge.vercel.app//api/badge/da59a73e-227f-480d-a02d-dfb0e24fa3c0?style=for-the-badge&color=2c1fe0&labelColor=000000)
 ---
 
 ## 🧩 Overview
