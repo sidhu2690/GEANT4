@@ -1,2 +1,2 @@
 - 00_cellwise_segmentation.C: Contains the original implementation with only x-y-based pixel segmentation.
-- 01_cellwise_segmentation.C: Updated version that includes both x-y-based and eta-phi-based pixel segmentation for improved accuracy.
+- 01_cellwise_segmentation.C: Updated version that includes both x-y-based and eta-phi-based pixel segmentation.
