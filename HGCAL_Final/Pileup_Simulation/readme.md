@@ -1,1 +1,3 @@
-Files related to the pileup simulation using Geant4 of HGCAL.
+fine version - 20-12-25
+
+hgcal_realistic with pythia integration
