@@ -1,5 +1,5 @@
 #! /bin/bash
-#PBS -N g
+#PBS -N geant4run
 #PBS -l nodes=2:ppn=2
 #PBS -q long
 #PBS -o outphyjobMu.log
@@ -24,7 +24,7 @@ export G4PARTICLEXSDATA=/gscratch/apps/root/geant4/install/share/Geant4/data/G4P
 
 cmake -DCMAKE_C_COMPILER=$(which gcc) -DCMAKE_CXX_COMPILER=$(which g++) ../
 make
-./sim run.mac &> "$PBS_O_WORKDIR/job_electron_run0.log"
+./sim run.mac &> "$PBS_O_WORKDIR/job_run0.log"
 
 # Record end time and calculate duration
 END_TIME=$(date +%s)
