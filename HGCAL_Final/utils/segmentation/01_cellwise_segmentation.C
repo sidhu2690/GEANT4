@@ -116,8 +116,8 @@ void cellwise_segmentation_v03(const char* inputFile = "Electron_Pt_025_Eta_185_
     //Eta_Phi Cell Tree Structure
     Eta_Phi_cellTree->Branch("event_id", &event_id,  "event_id/I");
     Eta_Phi_cellTree->Branch("layer",    &layer_out, "layer/I");
-    Eta_Phi_cellTree->Branch("ieta",     &ieta_out,  "i/I");
-    Eta_Phi_cellTree->Branch("iphi",     &iphi_out,  "j/I");
+    Eta_Phi_cellTree->Branch("ieta",     &ieta_out,  "ieta/I");
+    Eta_Phi_cellTree->Branch("iphi",     &iphi_out,  "iphi/I");
     Eta_Phi_cellTree->Branch("xi",       &xi_out,    "xi/D");
     Eta_Phi_cellTree->Branch("yi",       &yi_out,    "yi/D");
     Eta_Phi_cellTree->Branch("zi",       &zi_out,    "zi/D");
