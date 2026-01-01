@@ -1,0 +1,4 @@
+/random/setSeeds 23455558 87654321
+/control/verbose 2
+/run/verbose 2
+/run/beamOn 2000
