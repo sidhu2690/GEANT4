@@ -10,7 +10,7 @@ void pileup_automation(
     int nPU = 10
 ) {
     // Load and compile the pileup macro
-    gROOT->ProcessLine(".L createPileup.C+");
+    gROOT->ProcessLine(".L PileupAddition.C+");
 
     ifstream f(file);
     if (!f.is_open()) {
@@ -55,7 +55,7 @@ void pileup_automation(
 
         // Build ROOT command
         string cmd = Form(
-            "createPileup(\"%s\", \"%s\", %d)",
+            "PileupAddition(\"%s\", \"%s\", %d)",
             fullInputPath.c_str(),
             fullOutputPath.c_str(),
             nPU
