@@ -3,6 +3,11 @@
 #include <set>
 #include <tuple>
 #include <iostream>
+#include <TFile.h>
+#include <TTree.h>
+#include <TRandom3.h>
+#include <TROOT.h>
+
 
 void createPileup(const char* inputFile = "PileUp_Pt_GT_pt3_Eta_15_31_Events_20K_Step2.root", 
                   const char* outputFile = "PileUp_nPU_10_Pt_GT_pt3_Eta_15_31_Events_20K_Step2.root", 
