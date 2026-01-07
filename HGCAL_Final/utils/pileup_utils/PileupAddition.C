@@ -9,7 +9,7 @@
 #include <TROOT.h>
 
 
-void createPileup(const char* inputFile = "PileUp_Pt_GT_pt3_Eta_15_31_Events_20K_Step2.root", 
+void PileupAddition(const char* inputFile = "PileUp_Pt_GT_pt3_Eta_15_31_Events_20K_Step2.root", 
                   const char* outputFile = "PileUp_nPU_10_Pt_GT_pt3_Eta_15_31_Events_20K_Step2.root", 
                   int nPU = 10) {
     
