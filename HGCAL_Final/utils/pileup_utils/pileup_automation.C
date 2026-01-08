@@ -5,12 +5,13 @@
 using namespace std;
 
 void pileup_automation(
-    const char* file = "/persistent/data1/ms21080/daily/pileup_files/20k/addition/Pileup_Step2_Files.txt",
+    const char* file = "/persistent/data1/ms21080/daily/pileup_files/20k/addition/Pileup_Step2.txt",
     const char* outputPath = "/persistent/data1/ms21080/daily/pileup_files/20k/addition/",
-    int nPU = 10
+    int nPU = 10,
+    int nOutputEvents = 5
 ) {
     // Load and compile the pileup macro
-    gROOT->ProcessLine(".L PileupAddition.C+");
+    gROOT->ProcessLine(".L createPileup.C+");
 
     ifstream f(file);
     if (!f.is_open()) {
@@ -37,14 +38,11 @@ void pileup_automation(
         // Construct output filename
         string outputFile = inputFile;
 
-        // If Step2 exists, append nPU before it
-        size_t stepPos = outputFile.find("Step2");
-        if (stepPos != string::npos) {
-            outputFile.insert(stepPos, Form("nPU_%d_", nPU));
-        } else {
-            // fallback
-            outputFile = Form("nPU_%d_", nPU) + outputFile;
-        }
+        // Insert nPU_<nPU>_ right after "PileUp_"
+        outputFile.insert(
+            string("PileUp_").length(),
+            Form("nPU_%d_", nPU)
+        );
 
         string fullInputPath  = line;
         string fullOutputPath = string(outputPath) + "/" + outputFile;
@@ -53,12 +51,13 @@ void pileup_automation(
         cout << "  Input : " << inputFile << endl;
         cout << "  Output: " << outputFile << endl;
 
-        // Build ROOT command
+        // Call createPileup
         string cmd = Form(
-            "PileupAddition(\"%s\", \"%s\", %d)",
+            "createPileup(\"%s\", \"%s\", %d, %d)",
             fullInputPath.c_str(),
             fullOutputPath.c_str(),
-            nPU
+            nPU,
+            nOutputEvents
         );
 
         gROOT->ProcessLine(cmd.c_str());
@@ -72,3 +71,4 @@ void pileup_automation(
     cout << "Total files processed: " << fileCount << endl;
     cout << "========================================" << endl;
 }
+
