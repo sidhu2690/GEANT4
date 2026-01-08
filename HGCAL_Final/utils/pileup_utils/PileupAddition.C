@@ -9,10 +9,10 @@
 #include <TROOT.h>
 
 
-void PileupAddition(const char* inputFile = "PileUp_Pt_GT_pt3_Eta_15_31_Events_20K_Step2.root", 
-                  const char* outputFile = "PileUp_nPU_10_Pt_GT_pt3_Eta_15_31_Events_20K_Step2_demo.root", 
+void createPileup(const char* inputFile = "PileUp_Pt_GT_pt3_Eta_15_31_Events_20K_Step2.root", 
+                  const char* outputFile = "PileUp_nPU_10_Pt_GT_pt3_Eta_15_31_Events_20K_Step2.root", 
                   int nPU = 10,
-                  int nOutputEvents = 5) {
+                  int nOutputEvents = 20000) {
     
     using namespace std;
     
@@ -69,7 +69,8 @@ void PileupAddition(const char* inputFile = "PileUp_Pt_GT_pt3_Eta_15_31_Events_2
     // Set up input branches for pixel tree
     int p_event_id, p_layer, p_i, p_j, p_ADC;
     double p_xi, p_yi, p_zi, p_theta, p_phi, p_eta, p_edep;
-    
+
+
     pixelTree->SetBranchAddress("event_id", &p_event_id);
     pixelTree->SetBranchAddress("layer", &p_layer);
     pixelTree->SetBranchAddress("i", &p_i);
@@ -87,6 +88,7 @@ void PileupAddition(const char* inputFile = "PileUp_Pt_GT_pt3_Eta_15_31_Events_2
     int e_event_id, e_layer, e_ieta, e_iphi, e_ADC;
     double e_xi, e_yi, e_zi, e_theta, e_phi, e_eta, e_edep;
     
+
     etaPhiTree->SetBranchAddress("event_id", &e_event_id);
     etaPhiTree->SetBranchAddress("layer", &e_layer);
     etaPhiTree->SetBranchAddress("ieta", &e_ieta);
@@ -105,6 +107,10 @@ void PileupAddition(const char* inputFile = "PileUp_Pt_GT_pt3_Eta_15_31_Events_2
     double op_xi, op_yi, op_zi, op_theta, op_phi, op_eta, op_edep;
     
     TTree* outPixelTree = new TTree("Pixel_CellWiseSegmentation", "Pixel Cell-wise Segmented Hit Data");
+
+    outPixelTree->SetAutoSave(0);
+    outPixelTree->SetAutoFlush(50000);
+
     outPixelTree->Branch("event_id", &op_event_id, "event_id/I");
     outPixelTree->Branch("layer", &op_layer, "layer/I");
     outPixelTree->Branch("i", &op_i, "i/I");
@@ -123,6 +129,10 @@ void PileupAddition(const char* inputFile = "PileUp_Pt_GT_pt3_Eta_15_31_Events_2
     double oe_xi, oe_yi, oe_zi, oe_theta, oe_phi, oe_eta, oe_edep;
     
     TTree* outEtaPhiTree = new TTree("Eta_Phi_CellWiseSegmentation", "Eta-Phi Cell-wise Segmented Hit Data");
+
+    outEtaPhiTree->SetAutoSave(0);
+    outEtaPhiTree->SetAutoFlush(50000);
+
     outEtaPhiTree->Branch("event_id", &oe_event_id, "event_id/I");
     outEtaPhiTree->Branch("layer", &oe_layer, "layer/I");
     outEtaPhiTree->Branch("ieta", &oe_ieta, "ieta/I");
