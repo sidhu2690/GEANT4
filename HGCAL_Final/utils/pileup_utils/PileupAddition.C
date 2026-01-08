@@ -9,9 +9,10 @@
 #include <TROOT.h>
 
 
-void PileupAddition(const char* inputFile = "PileUp_Pt_GT_pt3_Eta_15_31_Events_20K_Step2.root", 
+void createPileup(const char* inputFile = "PileUp_Pt_GT_pt3_Eta_15_31_Events_20K_Step2.root", 
                   const char* outputFile = "PileUp_nPU_10_Pt_GT_pt3_Eta_15_31_Events_20K_Step2.root", 
-                  int nPU = 10) {
+                  int nPU = 10,
+                  int nOutputEvents = 20000) {
     
     using namespace std;
     
@@ -56,8 +57,6 @@ void PileupAddition(const char* inputFile = "PileUp_Pt_GT_pt3_Eta_15_31_Events_2
     for (auto& kv : pixelEventIndex) {
         eventList.push_back(kv.first);
     }
-    int nEvents = eventList.size();
-    cout << "Found " << nEvents << " unique events" << endl;
     
     // Create output file
     TFile* fout = new TFile(outputFile, "RECREATE");
@@ -153,12 +152,12 @@ void PileupAddition(const char* inputFile = "PileUp_Pt_GT_pt3_Eta_15_31_Events_2
         int ADC;
     };
     
-    cout << "Processing " << nEvents << " output events (nPU = " << nPU << ")..." << endl;
+    cout << "Processing " << nOutputEvents << " output events (nPU = " << nPU << ")..." << endl;
     
     // Loop over output events
-    for (int outEvt = 1; outEvt <= nEvents; outEvt++) {
+    for (int outEvt = 1; outEvt <= nOutputEvents; outEvt++) {
         if (outEvt % 2000 == 0) 
-            cout << "Event " << outEvt << "/" << nEvents << endl;
+            cout << "Event " << outEvt << "/" << nOutputEvents << endl;
         
         evts_used.clear();
         map_event_id = outEvt;
@@ -166,7 +165,7 @@ void PileupAddition(const char* inputFile = "PileUp_Pt_GT_pt3_Eta_15_31_Events_2
         // random nPU
         set<int> puIndices;
         while ((int)puIndices.size() < nPU) {
-            puIndices.insert(rng.Integer(nEvents));
+            puIndices.insert(rng.Integer(nOutputEvents));
         }
 
         for (int idx : puIndices) {
@@ -258,5 +257,5 @@ void PileupAddition(const char* inputFile = "PileUp_Pt_GT_pt3_Eta_15_31_Events_2
     fout->Close();
     fin->Close();
     
-    cout << "Done! Created " << nEvents << " pileup events with nPU=" << nPU << endl;
+    cout << "Done! Created " << nOutputEvents << " pileup events with nPU=" << nPU << endl;
 }
