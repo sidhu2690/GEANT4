@@ -42,7 +42,7 @@ struct Eta_Phi_CellData {
     Double_t edep;
 };
 
-void cellwise_segmentation_v03(const char* inputFile = "Electron_Pt_025_Eta_185_Events_5_PU_000_Set01_Step1.root",
+void cellwise_segmentation(const char* inputFile = "Electron_Pt_025_Eta_185_Events_5_PU_000_Set01_Step1.root",
                             const char* outputFile = "Electron_Pt_025_Eta_185_Events_5_PU_000_Set01_Step2.root") {
 
     Int_t nEta_Bins  = 736,   nPhi_Bins = nEta_Bins;
