@@ -257,6 +257,8 @@ void createPileup(const char* inputFile = "PileUp_Pt_GT_pt3_Eta_15_31_Events_20K
         }
         
         evtMapTree->Fill();
+        cout << "Output event " << outEvt << " processed." << endl;
+
     }
     
     cout << "Writing output..." << endl;
