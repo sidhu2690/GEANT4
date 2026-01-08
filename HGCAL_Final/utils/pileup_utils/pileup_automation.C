@@ -11,7 +11,7 @@ void pileup_automation(
     int nOutputEvents = 5
 ) {
     // Load and compile the pileup macro
-    gROOT->ProcessLine(".L createPileup.C+");
+    gROOT->ProcessLine(".L PileupAddition.C+");
 
     ifstream f(file);
     if (!f.is_open()) {
@@ -53,7 +53,7 @@ void pileup_automation(
 
         // Call createPileup
         string cmd = Form(
-            "createPileup(\"%s\", \"%s\", %d, %d)",
+            "PileupAddition(\"%s\", \"%s\", %d, %d)",
             fullInputPath.c_str(),
             fullOutputPath.c_str(),
             nPU,
@@ -67,7 +67,7 @@ void pileup_automation(
     }
 
     cout << "\n========================================" << endl;
-    cout << "Pileup automation complete!" << endl;
+    cout << "Pileup addition completed!" << endl;
     cout << "Total files processed: " << fileCount << endl;
     cout << "========================================" << endl;
 }
