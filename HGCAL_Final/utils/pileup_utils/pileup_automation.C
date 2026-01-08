@@ -5,7 +5,7 @@
 using namespace std;
 
 void pileup_automation(
-    const char* file = "/persistent/data1/ms21080/Data/Pileup/Pileup_Step2.txt",
+    const char* file = "/persistent/data1/ms21080/Data/Pileup/PileUp_Step2.txt",
     const char* outputPath = "/persistent/data1/ms21080/Data/Pileup/Pileup_Addition/",
     int nOutputEvents = 20000
 ) {
