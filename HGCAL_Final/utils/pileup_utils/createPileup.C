@@ -175,7 +175,7 @@ void createPileup(const char* inputFile = "PileUp_Pt_GT_pt3_Eta_15_31_Events_20K
         // random nPU
         set<int> puIndices;
         while ((int)puIndices.size() < nPU) {
-            puIndices.insert(rng.Integer(nOutputEvents));
+            puIndices.insert(rng.Integer(eventList.size()));
         }
 
         for (int idx : puIndices) {
