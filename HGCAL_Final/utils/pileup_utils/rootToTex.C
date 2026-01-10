@@ -1,4 +1,4 @@
-void generate_txt() {
+void rootToText{
     // Open the ROOT file
     TFile *fin = TFile::Open("pythia8_PU_Events_20K.root");
     if (!fin || fin->IsZombie()) {
