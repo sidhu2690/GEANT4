@@ -8,9 +8,10 @@
 #include <TRandom3.h>
 #include <TROOT.h>
 
-void addPileupToSignal(const char* signalFile = "MuonM_Pt_025_Eta_170_Events_2K_PU_000_Set01_Step2.root",
-                       const char* pileupFile = "PileUp_nPU_35_Pt_GT_pt3_Eta_15_31_Events_20K_Step2.root",
-                       const char* outputFile = "MuonM_Pt_025_Eta_170_Events_2K_WithPU_Step2.root") {
+
+void addPileupToSignal(const char* signalFile = "Electron_Pt_025_Eta_170_Events_2K_PU_000_Set01_Step2.root",
+                       const char* pileupFile = "PileUp_nPU_035_Pt_GT_pt3_Eta_15_31_Events_20K_Step2.root",
+                       const char* outputFile = "Electron_nPU_35_Pt_025_Eta_170_Events_2K_PU_000_Set01_Step2.root") {
     
     using namespace std;
     
@@ -29,28 +30,15 @@ void addPileupToSignal(const char* signalFile = "MuonM_Pt_025_Eta_170_Events_2K_
     
     // Get signal trees
     TTree* sigGenTree = (TTree*)fSignal->Get("GeneratorInfo");
-    TTree* sigPixelTree = (TTree*)fSignal->Get("Pixel_CellWiseSegmentation");
     TTree* sigEtaPhiTree = (TTree*)fSignal->Get("Eta_Phi_CellWiseSegmentation");
     
     // Get pileup trees
     TTree* puGenTree = (TTree*)fPileup->Get("GeneratorInfo");
-    TTree* puPixelTree = (TTree*)fPileup->Get("Pixel_CellWiseSegmentation");
     TTree* puEtaPhiTree = (TTree*)fPileup->Get("Eta_Phi_CellWiseSegmentation");
     
     // Build signal event indices
     cout << "Building signal event indices..." << endl;
-    map<int, vector<Long64_t>> sigPixelEventIndex;
     map<int, vector<Long64_t>> sigEtaPhiEventIndex;
-    
-    {
-        int event_id;
-        sigPixelTree->SetBranchAddress("event_id", &event_id);
-        for (Long64_t i = 0; i < sigPixelTree->GetEntries(); i++) {
-            sigPixelTree->GetEntry(i);
-            sigPixelEventIndex[event_id].push_back(i);
-        }
-        sigPixelTree->ResetBranchAddresses();
-    }
     
     {
         int event_id;
@@ -63,7 +51,7 @@ void addPileupToSignal(const char* signalFile = "MuonM_Pt_025_Eta_170_Events_2K_
     }
     
     vector<int> sigEventList;
-    for (auto& kv : sigPixelEventIndex) {
+    for (auto& kv : sigEtaPhiEventIndex) {
         sigEventList.push_back(kv.first);
     }
     int nSignalEvents = sigEventList.size();
@@ -71,18 +59,7 @@ void addPileupToSignal(const char* signalFile = "MuonM_Pt_025_Eta_170_Events_2K_
     
     // Build pileup event indices
     cout << "Building pileup event indices..." << endl;
-    map<int, vector<Long64_t>> puPixelEventIndex;
     map<int, vector<Long64_t>> puEtaPhiEventIndex;
-    
-    {
-        int event_id;
-        puPixelTree->SetBranchAddress("event_id", &event_id);
-        for (Long64_t i = 0; i < puPixelTree->GetEntries(); i++) {
-            puPixelTree->GetEntry(i);
-            puPixelEventIndex[event_id].push_back(i);
-        }
-        puPixelTree->ResetBranchAddresses();
-    }
     
     {
         int event_id;
@@ -95,7 +72,7 @@ void addPileupToSignal(const char* signalFile = "MuonM_Pt_025_Eta_170_Events_2K_
     }
     
     vector<int> puEventList;
-    for (auto& kv : puPixelEventIndex) {
+    for (auto& kv : puEtaPhiEventIndex) {
         puEventList.push_back(kv.first);
     }
     int nPileupEvents = puEventList.size();
@@ -110,19 +87,26 @@ void addPileupToSignal(const char* signalFile = "MuonM_Pt_025_Eta_170_Events_2K_
     // Create output file
     TFile* fout = new TFile(outputFile, "RECREATE");
     
-    // Clone signal GeneratorInfo
-    cout << "Cloning Signal GeneratorInfo..." << endl;
-    TTree* outSigGenTree = sigGenTree->CloneTree(-1, "fast");
-    outSigGenTree->SetName("Signal_GeneratorInfo");
-    outSigGenTree->SetTitle("Signal Generator Level Particle Data");
-    outSigGenTree->Write();
+    // Combine GeneratorInfo trees
+    cout << "Combining GeneratorInfo trees..." << endl;
+    TTree* outGenTree = new TTree("GeneratorInfo", "Combined Generator Level Particle Data");
+    outGenTree->SetAutoSave(0);
+    outGenTree->SetAutoFlush(50000);
     
-    // Clone signal Pixel tree
-    cout << "Cloning Signal Pixel tree..." << endl;
-    TTree* outSigPixelTree = sigPixelTree->CloneTree(-1, "fast");
-    outSigPixelTree->SetName("Signal_Pixel_CellWiseSegmentation");
-    outSigPixelTree->SetTitle("Signal Pixel Cell-wise Segmented Hit Data");
-    outSigPixelTree->Write();
+    // Clone signal GeneratorInfo entries
+    for (Long64_t i = 0; i < sigGenTree->GetEntries(); i++) {
+        sigGenTree->GetEntry(i);
+        outGenTree->CopyAddresses(sigGenTree);
+        outGenTree->Fill();
+    }
+    
+    // Clone pileup GeneratorInfo entries
+    for (Long64_t i = 0; i < puGenTree->GetEntries(); i++) {
+        puGenTree->GetEntry(i);
+        outGenTree->CopyAddresses(puGenTree);
+        outGenTree->Fill();
+    }
+    outGenTree->Write();
     
     // Clone signal EtaPhi tree
     cout << "Cloning Signal EtaPhi tree..." << endl;
@@ -130,20 +114,6 @@ void addPileupToSignal(const char* signalFile = "MuonM_Pt_025_Eta_170_Events_2K_
     outSigEtaPhiTree->SetName("Signal_Eta_Phi_CellWiseSegmentation");
     outSigEtaPhiTree->SetTitle("Signal Eta-Phi Cell-wise Segmented Hit Data");
     outSigEtaPhiTree->Write();
-    
-    // Clone pileup GeneratorInfo
-    cout << "Cloning Pileup GeneratorInfo..." << endl;
-    TTree* outPuGenTree = puGenTree->CloneTree(-1, "fast");
-    outPuGenTree->SetName("Pileup_GeneratorInfo");
-    outPuGenTree->SetTitle("Pileup Generator Level Particle Data");
-    outPuGenTree->Write();
-    
-    // Clone pileup Pixel tree
-    cout << "Cloning Pileup Pixel tree..." << endl;
-    TTree* outPuPixelTree = puPixelTree->CloneTree(-1, "fast");
-    outPuPixelTree->SetName("Pileup_Pixel_CellWiseSegmentation");
-    outPuPixelTree->SetTitle("Pileup Pixel Cell-wise Segmented Hit Data");
-    outPuPixelTree->Write();
     
     // Clone pileup EtaPhi tree
     cout << "Cloning Pileup EtaPhi tree..." << endl;
@@ -181,61 +151,6 @@ void addPileupToSignal(const char* signalFile = "MuonM_Pt_025_Eta_170_Events_2K_
         evtMapTree->Fill();
     }
     evtMapTree->Write();
-    
-    // Set up branches for signal pixel tree
-    int sp_event_id, sp_layer, sp_i, sp_j, sp_ADC;
-    double sp_xi, sp_yi, sp_zi, sp_theta, sp_phi, sp_eta, sp_edep;
-    
-    sigPixelTree->SetBranchAddress("event_id", &sp_event_id);
-    sigPixelTree->SetBranchAddress("layer", &sp_layer);
-    sigPixelTree->SetBranchAddress("i", &sp_i);
-    sigPixelTree->SetBranchAddress("j", &sp_j);
-    sigPixelTree->SetBranchAddress("xi", &sp_xi);
-    sigPixelTree->SetBranchAddress("yi", &sp_yi);
-    sigPixelTree->SetBranchAddress("zi", &sp_zi);
-    sigPixelTree->SetBranchAddress("theta", &sp_theta);
-    sigPixelTree->SetBranchAddress("phi", &sp_phi);
-    sigPixelTree->SetBranchAddress("eta", &sp_eta);
-    sigPixelTree->SetBranchAddress("edep", &sp_edep);
-    sigPixelTree->SetBranchAddress("ADC", &sp_ADC);
-    
-    // Set up branches for pileup pixel tree
-    int pp_event_id, pp_layer, pp_i, pp_j, pp_ADC;
-    double pp_xi, pp_yi, pp_zi, pp_theta, pp_phi, pp_eta, pp_edep;
-    
-    puPixelTree->SetBranchAddress("event_id", &pp_event_id);
-    puPixelTree->SetBranchAddress("layer", &pp_layer);
-    puPixelTree->SetBranchAddress("i", &pp_i);
-    puPixelTree->SetBranchAddress("j", &pp_j);
-    puPixelTree->SetBranchAddress("xi", &pp_xi);
-    puPixelTree->SetBranchAddress("yi", &pp_yi);
-    puPixelTree->SetBranchAddress("zi", &pp_zi);
-    puPixelTree->SetBranchAddress("theta", &pp_theta);
-    puPixelTree->SetBranchAddress("phi", &pp_phi);
-    puPixelTree->SetBranchAddress("eta", &pp_eta);
-    puPixelTree->SetBranchAddress("edep", &pp_edep);
-    puPixelTree->SetBranchAddress("ADC", &pp_ADC);
-    
-    // Create combined pixel tree
-    int op_event_id, op_layer, op_i, op_j, op_ADC;
-    double op_xi, op_yi, op_zi, op_theta, op_phi, op_eta, op_edep;
-    
-    TTree* outPixelTree = new TTree("Pixel_CellWiseSegmentation", "Combined Pixel Cell-wise Segmented Hit Data");
-    outPixelTree->SetAutoSave(0);
-    outPixelTree->SetAutoFlush(50000);
-    
-    outPixelTree->Branch("event_id", &op_event_id, "event_id/I");
-    outPixelTree->Branch("layer", &op_layer, "layer/I");
-    outPixelTree->Branch("i", &op_i, "i/I");
-    outPixelTree->Branch("j", &op_j, "j/I");
-    outPixelTree->Branch("xi", &op_xi, "xi/D");
-    outPixelTree->Branch("yi", &op_yi, "yi/D");
-    outPixelTree->Branch("zi", &op_zi, "zi/D");
-    outPixelTree->Branch("theta", &op_theta, "theta/D");
-    outPixelTree->Branch("phi", &op_phi, "phi/D");
-    outPixelTree->Branch("eta", &op_eta, "eta/D");
-    outPixelTree->Branch("edep", &op_edep, "edep/D");
-    outPixelTree->Branch("ADC", &op_ADC, "ADC/I");
     
     // Set up branches for signal eta-phi tree
     int se_event_id, se_layer, se_ieta, se_iphi, se_ADC;
@@ -309,52 +224,6 @@ void addPileupToSignal(const char* signalFile = "MuonM_Pt_025_Eta_170_Events_2K_
         
         int puEvt = eventMapping[sigEvt];
         
-        // Combine pixel hits: key = (layer, i, j)
-        map<tuple<int,int,int>, Hit> pixelHitMap;
-        
-        // Add signal hits first
-        auto sigIt = sigPixelEventIndex.find(sigEvt);
-        if (sigIt != sigPixelEventIndex.end()) {
-            for (Long64_t entry : sigIt->second) {
-                sigPixelTree->GetEntry(entry);
-                auto key = make_tuple(sp_layer, sp_i, sp_j);
-                pixelHitMap[key] = {sp_xi, sp_yi, sp_zi, sp_theta, sp_phi, sp_eta, sp_edep, sp_ADC};
-            }
-        }
-        
-        // Add pileup hits (sum edep and ADC if overlapping)
-        auto puIt = puPixelEventIndex.find(puEvt);
-        if (puIt != puPixelEventIndex.end()) {
-            for (Long64_t entry : puIt->second) {
-                puPixelTree->GetEntry(entry);
-                auto key = make_tuple(pp_layer, pp_i, pp_j);
-                
-                if (pixelHitMap.find(key) == pixelHitMap.end()) {
-                    pixelHitMap[key] = {pp_xi, pp_yi, pp_zi, pp_theta, pp_phi, pp_eta, pp_edep, pp_ADC};
-                } else {
-                    pixelHitMap[key].edep += pp_edep;
-                    pixelHitMap[key].ADC += pp_ADC;
-                }
-            }
-        }
-        
-        // Write combined pixel hits
-        for (auto& kv : pixelHitMap) {
-            op_event_id = sigEvt;
-            op_layer = get<0>(kv.first);
-            op_i = get<1>(kv.first);
-            op_j = get<2>(kv.first);
-            op_xi = kv.second.xi;
-            op_yi = kv.second.yi;
-            op_zi = kv.second.zi;
-            op_theta = kv.second.theta;
-            op_phi = kv.second.phi;
-            op_eta = kv.second.eta;
-            op_edep = kv.second.edep;
-            op_ADC = kv.second.ADC;
-            outPixelTree->Fill();
-        }
-        
         // Combine eta-phi hits: key = (layer, ieta, iphi)
         map<tuple<int,int,int>, Hit> etaPhiHitMap;
         
@@ -403,7 +272,6 @@ void addPileupToSignal(const char* signalFile = "MuonM_Pt_025_Eta_170_Events_2K_
     }
     
     cout << "Writing output..." << endl;
-    outPixelTree->Write();
     outEtaPhiTree->Write();
     
     fout->Close();
@@ -412,13 +280,9 @@ void addPileupToSignal(const char* signalFile = "MuonM_Pt_025_Eta_170_Events_2K_
     
     cout << "Done! Output file: " << outputFile << endl;
     cout << "Trees in output:" << endl;
-    cout << "  - Signal_GeneratorInfo (cloned from signal)" << endl;
-    cout << "  - Signal_Pixel_CellWiseSegmentation (cloned from signal)" << endl;
+    cout << "  - GeneratorInfo (combined signal + pileup)" << endl;
     cout << "  - Signal_Eta_Phi_CellWiseSegmentation (cloned from signal)" << endl;
-    cout << "  - Pileup_GeneratorInfo (cloned from pileup)" << endl;
-    cout << "  - Pileup_Pixel_CellWiseSegmentation (cloned from pileup)" << endl;
     cout << "  - Pileup_Eta_Phi_CellWiseSegmentation (cloned from pileup)" << endl;
     cout << "  - EventMapping (signal event -> pileup event mapping)" << endl;
-    cout << "  - Pixel_CellWiseSegmentation (combined signal + pileup)" << endl;
     cout << "  - Eta_Phi_CellWiseSegmentation (combined signal + pileup)" << endl;
 }
