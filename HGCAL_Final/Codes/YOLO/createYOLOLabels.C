@@ -15,15 +15,20 @@ void createYOLOLabels(const char* inputFile = "Electron_nPU_35_Pt_025_Eta_170_Ev
     
     using namespace std;
     
-    // Constants (same as cellwise_segmentation)
+    // Constants (matching segmentation)
     const int N_eta = 736;
     const int N_phi = 736;
     const double eta_min = 1.4;
     const double eta_max = 3.1;
-    const double phi_min = 0.0;
-    const double phi_max = 360.0;
     const double del_eta = (eta_max - eta_min) / N_eta;
-    const double del_phi = (phi_max - phi_min) / N_phi;
+    const double del_phi = 360.0 / N_phi;  // in degrees
+    
+    cout << "=== YOLO Label Creator ===" << endl;
+    cout << "Input file: " << inputFile << endl;
+    cout << "Output file: " << outputFile << endl;
+    cout << "Containment threshold: " << containment_threshold << endl;
+    cout << "Max box n: " << max_box_n << endl;
+    cout << endl;
     
     // Open input file
     TFile* fin = TFile::Open(inputFile, "READ");
@@ -86,42 +91,64 @@ void createYOLOLabels(const char* inputFile = "Electron_nPU_35_Pt_025_Eta_170_Ev
     cout << "Processing " << eventList.size() << " events..." << endl;
     
     int processed = 0;
-    int skipped = 0;
+    int skipped_no_gen = 0;
+    int skipped_out_of_range = 0;
+    int skipped_no_energy = 0;
     
     // Process each event
     for (int event_id : eventList) {
         
         // Get generator info for this event
         if (genIndex.find(event_id) == genIndex.end()) {
-            skipped++;
+            skipped_no_gen++;
             continue;
         }
         genTree->GetEntry(genIndex[event_id]);
         
-        // Convert phi from [0, 2π] to [0, 360] degrees
-        double phi_deg = gen_phi * (180.0 / M_PI);
-        
-        // Compute seed cell indices
+        // =====================================================
+        // ieta_seed: same as segmentation
+        // =====================================================
+
         int ieta_seed = (int)round((fabs(gen_eta) - eta_min) / del_eta);
-        int iphi_seed = (int)round((phi_deg - phi_min) / del_phi);
+        
+
+        // =====================================================
+        // iphi_seed: directly invert segmentation formula
+        // 
+        // Segmentation used:
+        //   phi_rad = atan2(yi, xi)                    // range: (-π, +π]
+        //   phi_deg = 180 + phi_rad * (180/π)         // range: [0, 360)
+        //   iphi = round(phi_deg / del_phi)
+        //
+        // gen_phi is in [0, 2π], so convert to (-π, +π] first
+        // =====================================================
+
+
+        double phi_rad = gen_phi;
+        if (phi_rad > M_PI) phi_rad -= 2.0 * M_PI;  // convert [0,2π] → (-π,+π]
+        
+        double phi_deg = 180.0 + phi_rad * (180.0 / M_PI);
+        int iphi_seed = (int)round(phi_deg / del_phi)
         
         // Skip if seed is outside valid range
         if (ieta_seed < 0 || ieta_seed >= N_eta || iphi_seed < 0 || iphi_seed >= N_phi) {
-            skipped++;
+            skipped_out_of_range++;
             continue;
         }
         
         // Build energy map for this event
+        // Note: sig_iphi is 1-indexed in the tree, convert to 0-indexed
         vector<vector<double>> energy(N_eta, vector<double>(N_phi, 0.0));
         
         for (Long64_t entry : sigIndex[event_id]) {
             sigTree->GetEntry(entry);
-            if (sig_ieta >= 0 && sig_ieta < N_eta && sig_iphi >= 0 && sig_iphi < N_phi) {
-                energy[sig_ieta][sig_iphi] += sig_edep;
+            int iphi_0idx = sig_iphi - 1;  // convert 1-indexed to 0-indexed
+            if (sig_ieta >= 0 && sig_ieta < N_eta && iphi_0idx >= 0 && iphi_0idx < N_phi) {
+                energy[sig_ieta][iphi_0idx] += sig_edep;
             }
         }
         
-        // Compute E_total from max box (39x39 or less at edges)
+        // Compute E_total from max box
         int hw_max = max_box_n - 1;
         double E_total = 0.0;
         
@@ -137,7 +164,7 @@ void createYOLOLabels(const char* inputFile = "Electron_nPU_35_Pt_025_Eta_170_Ev
         
         // Skip if no energy
         if (E_total <= 0) {
-            skipped++;
+            skipped_no_energy++;
             continue;
         }
         
@@ -198,8 +225,11 @@ void createYOLOLabels(const char* inputFile = "Electron_nPU_35_Pt_025_Eta_170_Ev
     
     // Summary
     cout << "\n=== Summary ===" << endl;
+    cout << "Total events: " << eventList.size() << endl;
     cout << "Processed: " << processed << endl;
-    cout << "Skipped: " << skipped << endl;
+    cout << "Skipped (no gen info): " << skipped_no_gen << endl;
+    cout << "Skipped (out of range): " << skipped_out_of_range << endl;
+    cout << "Skipped (no energy): " << skipped_no_energy << endl;
     cout << "Output: " << outputFile << endl;
     cout << "===============" << endl;
 }
