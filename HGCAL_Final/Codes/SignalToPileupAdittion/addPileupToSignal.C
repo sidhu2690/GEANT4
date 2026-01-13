@@ -262,7 +262,7 @@ void addPileupToSignal(const char* signalFile = "Electron_Pt_025_Eta_170_Events_
             outEtaPhiTree->Fill();
         }
 
-    if (processed % 100 == 0) cout << "Output event " << processed << " completed." << endl;
+    if (processed % 10 == 0) cout << "Output event " << processed << " completed." << endl;
     }
     
     cout << "Writing output..." << endl;
