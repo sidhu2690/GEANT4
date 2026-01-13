@@ -261,6 +261,8 @@ void addPileupToSignal(const char* signalFile = "Electron_Pt_025_Eta_170_Events_
             oe_ADC = kv.second.ADC;
             outEtaPhiTree->Fill();
         }
+
+    if (processed % 100 == 0) cout << "Output event " << processed << " completed." << endl;
     }
     
     cout << "Writing output..." << endl;
