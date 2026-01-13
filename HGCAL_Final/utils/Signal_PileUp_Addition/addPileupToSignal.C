@@ -87,26 +87,18 @@ void addPileupToSignal(const char* signalFile = "Electron_Pt_025_Eta_170_Events_
     // Create output file
     TFile* fout = new TFile(outputFile, "RECREATE");
     
-    // Combine GeneratorInfo trees
-    cout << "Combining GeneratorInfo trees..." << endl;
-    TTree* outGenTree = new TTree("GeneratorInfo", "Combined Generator Level Particle Data");
-    outGenTree->SetAutoSave(0);
-    outGenTree->SetAutoFlush(50000);
+    // Clone separate GeneratorInfo trees
+    cout << "Cloning Signal GeneratorInfo tree..." << endl;
+    TTree* outSigGenTree = sigGenTree->CloneTree(-1, "fast");
+    outSigGenTree->SetName("Signal_GeneratorInfo");
+    outSigGenTree->SetTitle("Signal Generator Level Particle Data");
+    outSigGenTree->Write();
     
-    // Clone signal GeneratorInfo entries
-    for (Long64_t i = 0; i < sigGenTree->GetEntries(); i++) {
-        sigGenTree->GetEntry(i);
-        outGenTree->CopyAddresses(sigGenTree);
-        outGenTree->Fill();
-    }
-    
-    // Clone pileup GeneratorInfo entries
-    for (Long64_t i = 0; i < puGenTree->GetEntries(); i++) {
-        puGenTree->GetEntry(i);
-        outGenTree->CopyAddresses(puGenTree);
-        outGenTree->Fill();
-    }
-    outGenTree->Write();
+    cout << "Cloning Pileup GeneratorInfo tree..." << endl;
+    TTree* outPuGenTree = puGenTree->CloneTree(-1, "fast");
+    outPuGenTree->SetName("Pileup_GeneratorInfo");
+    outPuGenTree->SetTitle("Pileup Generator Level Particle Data");
+    outPuGenTree->Write();
     
     // Clone signal EtaPhi tree
     cout << "Cloning Signal EtaPhi tree..." << endl;
@@ -280,7 +272,8 @@ void addPileupToSignal(const char* signalFile = "Electron_Pt_025_Eta_170_Events_
     
     cout << "Done! Output file: " << outputFile << endl;
     cout << "Trees in output:" << endl;
-    cout << "  - GeneratorInfo (combined signal + pileup)" << endl;
+    cout << "  - Signal_GeneratorInfo (cloned from signal)" << endl;
+    cout << "  - Pileup_GeneratorInfo (cloned from pileup)" << endl;
     cout << "  - Signal_Eta_Phi_CellWiseSegmentation (cloned from signal)" << endl;
     cout << "  - Pileup_Eta_Phi_CellWiseSegmentation (cloned from pileup)" << endl;
     cout << "  - EventMapping (signal event -> pileup event mapping)" << endl;
