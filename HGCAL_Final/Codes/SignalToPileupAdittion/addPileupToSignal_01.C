@@ -13,7 +13,7 @@
 
 void addPileupToSignal(const char* signalFile = "Electron_Pt_025_Eta_170_Events_2K_PU_000_Set01_Step2.root",
                        const char* pileupFile = "PileUp_nPU_035_Pt_GT_pt3_Eta_15_31_Events_20K_Step2.root",
-                       const char* outputFile = "Electron_nPU_35_Pt_025_Eta_170_Events_2K_PU_000_Set01_Step2.root",
+                       const char* outputFile = "Electron_nPU_35_Pt_025_Eta_170_Events_2K_Set01_Step2.root",
                        int classLabel = 0) {  // Added class label parameter
     
     using namespace std;
