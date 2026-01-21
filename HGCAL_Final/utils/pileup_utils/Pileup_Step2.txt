@@ -1,9 +1,0 @@
-# Pileup Configuration File
-# Format: filepath - nPU
-
-/persistent/data1/ms21080/Data/Pileup/PileUp_Pt_GT_pt3_Eta_15_31_Events_20K_Step2.root - 0
-/persistent/data1/ms21080/Data/Pileup/PileUp_Pt_GT_pt3_Eta_15_31_Events_20K_Step2.root - 35
-/persistent/data1/ms21080/Data/Pileup/PileUp_Pt_GT_pt3_Eta_15_31_Events_20K_Step2.root - 70
-/persistent/data1/ms21080/Data/Pileup/PileUp_Pt_GT_pt3_Eta_15_31_Events_20K_Step2.root - 100
-/persistent/data1/ms21080/Data/Pileup/PileUp_Pt_GT_pt3_Eta_15_31_Events_20K_Step2.root - 150
-/persistent/data1/ms21080/Data/Pileup/PileUp_Pt_GT_pt3_Eta_15_31_Events_20K_Step2.root - 200
