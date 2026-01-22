@@ -897,7 +897,7 @@ G4VPhysicalVolume* MyDetectorConstruction::Construct() {
 
 void MyDetectorConstruction::ConstructSDandField() {
     // Create uniform magnetic field along z-axis: 8.3 Tesla
-    G4ThreeVector fieldValue(0., 0., 8.3*tesla);
+    G4ThreeVector fieldValue(0., 0., 3.8*tesla);
     G4MagneticField* magneticField = new G4UniformMagField(fieldValue);
     
     // Get the global field manager
