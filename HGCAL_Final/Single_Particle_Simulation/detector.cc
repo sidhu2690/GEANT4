@@ -108,7 +108,7 @@ G4bool MySensitiveDetector::ProcessHits(G4Step* step, G4TouchableHistory* histor
         
         if (isLeavingVolume || isStoppingInVolume) {
             // Particle has completed its passage through this layer
-            if (data.hasEntryData && data.hasExitData) {
+            if (data.hasEntryData && data.hasExitData && data.totalEnergyDeposited > 10.0*eV) {
                 WriteParticleData(data);
             }
             
@@ -126,7 +126,7 @@ void MySensitiveDetector::EndOfEvent(G4HCofThisEvent* hce)
     // Write any remaining data that wasn't written during the event
     for (auto& pair : fParticleData) {
         const ParticleData& data = pair.second;
-        if (data.hasEntryData && data.hasExitData) {
+        if (data.hasEntryData && data.hasExitData && data.totalEnergyDeposited > 10.0*eV) {
             WriteParticleData(data);
         }
     }
