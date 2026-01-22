@@ -11,6 +11,10 @@
 #include "G4PVPlacement.hh"
 #include "G4SystemOfUnits.hh"
 #include "CLHEP/Units/PhysicalConstants.h"
+#include "G4UniformMagField.hh"
+#include "G4FieldManager.hh"
+#include "G4TransportationManager.hh"
+
 
 MyDetectorConstruction::MyDetectorConstruction() {}
 MyDetectorConstruction::~MyDetectorConstruction() {}
@@ -890,4 +894,18 @@ G4VPhysicalVolume* MyDetectorConstruction::Construct() {
     }
 
     return physWorld;
+}
+
+
+void MyDetectorConstruction::ConstructSDandField() {
+    G4ThreeVector fieldValue(0., 0., 8.3*tesla);
+    G4MagneticField* magneticField = new G4UniformMagField(fieldValue);
+    
+    G4FieldManager* fieldManager = 
+        G4TransportationManager::GetTransportationManager()->GetFieldManager();
+    
+    // Set the magnetic field
+    fieldManager->SetDetectorField(magneticField);
+    fieldManager->CreateChordFinder(magneticField);
+
 }
