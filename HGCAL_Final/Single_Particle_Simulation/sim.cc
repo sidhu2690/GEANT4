@@ -4,6 +4,8 @@
 #include "G4PhysListFactory.hh" 
 #include "construction.hh" 
 #include "action.hh"
+#include "G4VisExecutive.hh"
+#include "G4UIExecutive.hh"
 
 int main(int argc, char** argv) {
     // Run manager
@@ -21,10 +23,41 @@ int main(int argc, char** argv) {
     // Initialize kernel
     runManager->Initialize();
     
+    // Initialize visualization
+    G4VisManager* visManager = new G4VisExecutive();
+    visManager->Initialize();
+    
     // UI manager
     G4UImanager* UImanager = G4UImanager::GetUIpointer();
     
-    // BATCH MODE: Execute macro file if provided
+
+
+    // interactive mode
+    /*
+    if (argc == 1) {
+        G4UIExecutive* ui = new G4UIExecutive(argc, argv);
+        
+        // Setup visualization
+        UImanager->ApplyCommand("/vis/open OGL");
+        UImanager->ApplyCommand("/vis/viewer/set/autoRefresh true");
+        UImanager->ApplyCommand("/vis/drawVolume");
+        UImanager->ApplyCommand("/vis/viewer/set/viewpointVector 1 1 1");
+        UImanager->ApplyCommand("/vis/viewer/zoom 1.5");
+        UImanager->ApplyCommand("/vis/scene/add/trajectories smooth");
+        UImanager->ApplyCommand("/vis/scene/endOfEventAction accumulate");
+        
+        // Start interactive session
+        ui->SessionStart();
+        delete ui;
+    } else {
+        // BATCH MODE: Execute macro file
+        G4String command = "/control/execute ";
+        G4String fileName = argv[1];
+        UImanager->ApplyCommand(command + fileName);
+    }
+    */
+    //
+    // batch mode
     if (argc > 1) {
         G4String command = "/control/execute ";
         G4String fileName = argv[1];
@@ -34,7 +67,9 @@ int main(int argc, char** argv) {
         UImanager->ApplyCommand("/run/beamOn 1");
     }
     
+    //
     // Cleanup
+    delete visManager;
     delete runManager;
     
     return 0;
