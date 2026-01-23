@@ -1,5 +1,6 @@
 #include "detector.hh"
 #include "TrackInformation.hh"
+#include <cmath>
 #include "G4Step.hh"
 #include "G4Track.hh"
 #include "G4StepPoint.hh"
