@@ -18,7 +18,7 @@ MyRunAction::MyRunAction() {
     man->CreateNtupleDColumn("phi"); // 8
     man->CreateNtupleDColumn("theta"); // 9
     man->CreateNtupleIColumn("cumTr"); // 10
-    man->CreateNtupleDColumn("pt_GeV"); // 11
+    man->CreateNtupleDColumn("pt_MeV"); // 11
     man->CreateNtupleDColumn("charge"); // 12
     man->CreateNtupleIColumn("layer"); // 13
     man->CreateNtupleDColumn("energy_deposited_MeV"); // 14
