@@ -65,10 +65,21 @@ G4bool MySensitiveDetector::ProcessHits(G4Step* step, G4TouchableHistory* histor
     G4int copyNumber = preStepPoint->GetTouchable()->GetCopyNumber();
     G4int layer = copyNumber;
     
-    // Create unique identifier for this track-layer combination
+    // Create unique identifier based on entry position and angle
+    G4ThreeVector entryPos = preStepPoint->GetPosition();
+    G4ThreeVector entryMom = preStepPoint->GetMomentum();
+
+    // Round to reasonable precision to create key
+    G4double entryX = std::round(entryPos.x() / mm * 10.0) / 10.0;  // 0.1 mm precision
+    G4double entryY = std::round(entryPos.y() / mm * 10.0) / 10.0;
+    G4double entryPhi = std::round(std::atan2(entryMom.y(), entryMom.x()) * 100.0) / 100.0;  // 0.01 rad precision
+
     std::string trackLayerKey = std::to_string(eventID) + "_" + 
                                 std::to_string(trackID) + "_" + 
-                                std::to_string(layer);
+                                std::to_string(layer) + "_" +
+                                std::to_string(entryX) + "_" +
+                                std::to_string(entryY) + "_" +
+                                std::to_string(entryPhi);
     
     // Record entry data if this is the first step in this layer
     if (fParticleData.find(trackLayerKey) == fParticleData.end() && 
