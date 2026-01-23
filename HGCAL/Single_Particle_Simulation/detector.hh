@@ -24,10 +24,15 @@ struct ParticleData {
     G4ThreeVector positionExit;
     bool hasEntryData;
     bool hasExitData;
+    G4double etaEnter;
+    G4double phiEnter;
+    G4double etaExit;
+    G4double phiExit;
     
     ParticleData() : eventID(0), trackID(0), layer(0), particleID(0), cumTr(-1),  // INITIALIZE cumTr
                      energyBefore(0.0), energyAfter(0.0), totalEnergyDeposited(0.0),
-                     hasEntryData(false), hasExitData(false) {}
+                     hasEntryData(false), hasExitData(false),
+                     etaEnter(0.0), phiEnter(0.0), etaExit(0.0), phiExit(0.0){}
 };
 
 class MySensitiveDetector : public G4VSensitiveDetector {
@@ -40,7 +45,7 @@ public:
     virtual void EndOfEvent(G4HCofThisEvent* hce) override;
 
 private:
-    // Map to store particle data: key = "eventID_trackID_layer"
+    // Map to store particle data: key = hehe
     std::map<std::string, ParticleData> fParticleData;
     
     // Set to keep track of processed track-layer combinations
