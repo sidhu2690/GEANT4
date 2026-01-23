@@ -138,7 +138,7 @@ void MyPrimaryGenerator::GeneratePrimaries(G4Event* anEvent) {
         // VALUES FROM FILE
         // ==========================================
         G4double eta = std::fabs(genInfo.eta);         // Take absolute value of eta (detector on one side only)
-        G4double pT = genInfo.pt * MeV;                // pT from file (convert to MeV)
+        G4double pT = genInfo.pt * 1000.0 * MeV;       // pT from file 
         G4double phi = genInfo.phi;                    // phi from file (already in radians)
         
         // ==========================================
