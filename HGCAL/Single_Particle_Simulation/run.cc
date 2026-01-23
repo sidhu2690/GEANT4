@@ -28,7 +28,7 @@ MyRunAction::MyRunAction() {
     man->CreateNtupleDColumn("random_number"); // 18
     man->FinishNtuple(0);
     
-    // Ntuple 1: Hit-level information (WITH cumTr AND charge ADDED)
+    // Ntuple 1: Hit-level information (WITH cumTr, charge, AND eta/phi ADDED)
     man->CreateNtuple("ParticleTracking", "Particle Tracking Data");
     man->CreateNtupleIColumn("eventID"); // 0
     man->CreateNtupleIColumn("track_id"); // 1
@@ -53,6 +53,10 @@ MyRunAction::MyRunAction() {
     man->CreateNtupleIColumn("particle_id"); // 20
     man->CreateNtupleIColumn("cumTr"); // 21
     man->CreateNtupleDColumn("charge"); // 22
+    man->CreateNtupleDColumn("eta_enter"); // 23
+    man->CreateNtupleDColumn("phi_enter"); // 24
+    man->CreateNtupleDColumn("eta_exit"); // 25
+    man->CreateNtupleDColumn("phi_exit"); // 26
     man->FinishNtuple(1);
 }
 
