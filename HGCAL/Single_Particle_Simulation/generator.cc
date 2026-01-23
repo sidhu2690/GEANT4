@@ -15,6 +15,9 @@
 #include <iomanip>
 #include <cmath>
 
+
+
+static G4int cumTrCounter = 0;
 MyPrimaryGenerator::MyPrimaryGenerator()
     : G4VUserPrimaryGeneratorAction(),
       fParticleGun(nullptr)
@@ -129,7 +132,7 @@ void MyPrimaryGenerator::GeneratePrimaries(G4Event* anEvent)
         man->FillNtupleDColumn(0, 7, eta);
         man->FillNtupleDColumn(0, 8, phi);
         man->FillNtupleDColumn(0, 9, theta);
-        man->FillNtupleIColumn(0, 10, i);
+        man->FillNtupleIColumn(0, 10, cumTrCounter);
         man->FillNtupleDColumn(0, 11, pT / MeV);
         man->FillNtupleDColumn(0, 12, charge);
         man->FillNtupleIColumn(0, 13, 0);
@@ -140,6 +143,7 @@ void MyPrimaryGenerator::GeneratePrimaries(G4Event* anEvent)
         man->FillNtupleDColumn(0, 18, static_cast<G4double>(randomNumber));
 
         man->AddNtupleRow(0);
+		cumTrCounter++;
 
         G4cout << "  Particle " << i << ": PDG=" << pdgCode << " | pT=" << pT/GeV << " GeV | eta=" << eta
                << " | phi=" << phi << " rad | pTot=" << pTot/GeV << " GeV | charge=" << charge << G4endl;
