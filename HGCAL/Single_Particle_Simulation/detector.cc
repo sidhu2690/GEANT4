@@ -35,7 +35,7 @@ G4bool MySensitiveDetector::ProcessHits(G4Step* step, G4TouchableHistory* histor
     G4Track* track = step->GetTrack();
     if (!track) return false;
     
-    // Get pre and post step points
+    // Get pre and post-step points
     const G4StepPoint* preStepPoint = step->GetPreStepPoint();
     const G4StepPoint* postStepPoint = step->GetPostStepPoint();
     if (!preStepPoint || !postStepPoint) return false;
@@ -43,9 +43,9 @@ G4bool MySensitiveDetector::ProcessHits(G4Step* step, G4TouchableHistory* histor
     // Get basic track information
     G4int trackID = track->GetTrackID();
     G4int particleID = track->GetDefinition()->GetPDGEncoding();
-    G4double charge = track->GetDefinition()->GetPDGCharge();  // ADD THIS LINE
+    G4double charge = track->GetDefinition()->GetPDGCharge();  
     
-    // **KEY STEP: Extract cumTr from track information**
+    // Extract cumTr from track information
     G4int cumTr = -1;  // Default value if not found
     G4VUserTrackInformation* userInfo = track->GetUserInformation();
     if (userInfo) {
@@ -85,20 +85,22 @@ G4bool MySensitiveDetector::ProcessHits(G4Step* step, G4TouchableHistory* histor
     // Record entry data if this is the first step in this layer
     if (fParticleData.find(trackLayerKey) == fParticleData.end() && 
         fProcessedTrackLayers.find(trackLayerKey) == fProcessedTrackLayers.end()) {
-        
+    
         ParticleData& data = fParticleData[trackLayerKey];
         data.eventID = eventID;
         data.trackID = trackID;
         data.layer = layer;
         data.particleID = particleID;
         data.cumTr = cumTr;
-        data.charge = charge;  // STORE charge
+        data.charge = charge;
         data.energyBefore = preStepPoint->GetKineticEnergy();
         data.momentumBefore = preStepPoint->GetMomentum();
         data.positionEnter = preStepPoint->GetPosition();
         data.hasEntryData = true;
         data.totalEnergyDeposited = 0.0;
         data.hasExitData = false;
+        data.phiEnter = data.momentumBefore.phi();
+        data.etaEnter = data.momentumBefore.eta();
     }
     
     // Accumulate energy deposited in this step
@@ -112,6 +114,8 @@ G4bool MySensitiveDetector::ProcessHits(G4Step* step, G4TouchableHistory* histor
         data.momentumAfter = postStepPoint->GetMomentum();
         data.positionExit = postStepPoint->GetPosition();
         data.hasExitData = true;
+        data.phiExit = data.momentumAfter.phi();
+        data.etaExit = data.momentumAfter.eta();
         
         // Check if particle is leaving the volume or stopping
         G4StepStatus postStepStatus = postStepPoint->GetStepStatus();
@@ -181,7 +185,11 @@ void MySensitiveDetector::WriteParticleData(const ParticleData& data)
     man->FillNtupleDColumn(1, 19, rExit / mm);
     man->FillNtupleIColumn(1, 20, data.particleID);
     man->FillNtupleIColumn(1, 21, data.cumTr);
-    man->FillNtupleDColumn(1, 22, data.charge);  
+    man->FillNtupleDColumn(1, 22, data.charge); 
+    man->FillNtupleDColumn(1, 23, data.etaEnter);
+    man->FillNtupleDColumn(1, 24, data.phiEnter);
+    man->FillNtupleDColumn(1, 25, data.etaExit);
+    man->FillNtupleDColumn(1, 26, data.phiExit);
     
     // Commit this row to the ntuple
     man->AddNtupleRow(1);
