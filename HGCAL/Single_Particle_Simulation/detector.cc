@@ -6,6 +6,7 @@
 #include "G4ThreeVector.hh"
 #include "G4SystemOfUnits.hh"
 #include "G4ios.hh"
+#include <cmath>
 #include "G4RunManager.hh"
 #include "G4AnalysisManager.hh"
 #include "G4Event.hh"
