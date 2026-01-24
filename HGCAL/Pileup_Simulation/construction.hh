@@ -12,7 +12,8 @@ struct MaterialLayer {
     G4Material* material;
     G4double zMin;          // mm
     G4double zMax;          // mm
-    G4double outerRadius;   // mm
+    G4double outerRadius;   // cm
+    G4double innerRadius;    // cm
     G4int layerNumber;      // -1 for non-silicon layers
 };
 
