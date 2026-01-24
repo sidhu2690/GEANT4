@@ -277,7 +277,7 @@ G4VPhysicalVolume* MyDetectorConstruction::Construct() {
     	{"StainlessSteel_l10_pre10", stainlessMat, 3366.62, 3366.92, 150.8288, 31.8427, -1},
     	{"Cu_l10_pre11", cuMat, 3366.92, 3367.02, 150.8288, 31.8427, -1},
     	//{"Air_l10_pre12", airMat, 3367.02, 3367.245,150.8288, 31.8427, -1},
-    	{"PCB_l10_pre13", pcbMat, 3367.245, 42.5782, 150.8288, 31.8427, -1},
+    	{"PCB_l10_pre13", pcbMat, 3367.245, 3368.845, 150.8288, 31.8427, -1},
     	//{"Airelectronics_l10_pre14", airMat, 3368.845, 3372.575, 150.8288, 31.8427, -1},
     	{"PCBHexaboard_l10_pre15", pcbMat, 3372.575, 3374.175, 150.8288, 31.8427, -1},
     	//{"glue_l10_pre16", glueMat, 3374.175, 3374.25, 150.8288, 31.8427, -1},
