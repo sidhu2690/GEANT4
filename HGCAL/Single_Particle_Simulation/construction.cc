@@ -73,7 +73,6 @@ G4VPhysicalVolume* MyDetectorConstruction::Construct() {
     // ---------------------
     // Silicon layers 
     // ---------------------
-    G4double innerRadius = 15.0*cm;
 
     std::vector<MaterialLayer> siliconLayers = {
         {"Si_l1",   siMat,  3221.40,  3221.70, 151.9126, 31.8427, 1},
