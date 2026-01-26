@@ -24,7 +24,6 @@ void MySensitiveDetector::Initialize(G4HCofThisEvent* hce)
 {
     // Clear temporary data for new event
     fParticleData.clear();
-    fProcessedTrackLayers.clear();
 }
 
 G4bool MySensitiveDetector::ProcessHits(G4Step* step, G4TouchableHistory* history)
@@ -68,7 +67,6 @@ G4bool MySensitiveDetector::ProcessHits(G4Step* step, G4TouchableHistory* histor
     
     // Create unique identifier based on entry position and angle
     G4ThreeVector entryPos = preStepPoint->GetPosition();
-    G4ThreeVector entryMom = preStepPoint->GetMomentum();
 
     G4double entryX = entryPos.x(); 
     G4double entryY = entryPos.y();
@@ -80,8 +78,7 @@ G4bool MySensitiveDetector::ProcessHits(G4Step* step, G4TouchableHistory* histor
                                 std::to_string(entryY);
     
     // Record entry data if this is the first step in this layer
-    if (fParticleData.find(trackLayerKey) == fParticleData.end() && 
-        fProcessedTrackLayers.find(trackLayerKey) == fProcessedTrackLayers.end()) {
+    if (fParticleData.find(trackLayerKey) == fParticleData.end()) {
     
         ParticleData& data = fParticleData[trackLayerKey];
         data.eventID = eventID;
@@ -112,16 +109,10 @@ G4bool MySensitiveDetector::ProcessHits(G4Step* step, G4TouchableHistory* histor
         data.etaExit = data.momentumAfter.eta();
         
         
-        if (isLeavingVolume || isStoppingInVolume) {
-            // Particle has completed its passage through this layer
-            if (data.totalEnergyDeposited > 10.0 * eV) {
-                WriteParticleData(data);
-            }
-            
-            // Mark as processed and remove from active data
-            fProcessedTrackLayers.insert(trackLayerKey);
-            fParticleData.erase(it);
-        }
+        if (data.totalEnergyDeposited > 10.0 * eV) {
+            WriteParticleData(data);
+        }   
+        fParticleData.erase(it);
     }
     
     return true;
@@ -129,17 +120,7 @@ G4bool MySensitiveDetector::ProcessHits(G4Step* step, G4TouchableHistory* histor
 
 void MySensitiveDetector::EndOfEvent(G4HCofThisEvent* hce)
 {
-    // Write any remaining data that wasn't written during the event
-    for (auto& pair : fParticleData) {
-        const ParticleData& data = pair.second;
-        if (data.totalEnergyDeposited > 10.0*eV) {
-            WriteParticleData(data);
-        }
-    }
-    
-    // Clear all data structures for next event
     fParticleData.clear();
-    fProcessedTrackLayers.clear();
 }
 
 void MySensitiveDetector::WriteParticleData(const ParticleData& data)
