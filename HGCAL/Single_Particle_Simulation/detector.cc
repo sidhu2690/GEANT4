@@ -24,7 +24,6 @@ void MySensitiveDetector::Initialize(G4HCofThisEvent* hce)
 {
     // Clear temporary data for new event
     fParticleData.clear();
-    fProcessedTrackLayers.clear();
 }
 
 G4bool MySensitiveDetector::ProcessHits(G4Step* step, G4TouchableHistory* history)
@@ -71,20 +70,17 @@ G4bool MySensitiveDetector::ProcessHits(G4Step* step, G4TouchableHistory* histor
     G4ThreeVector entryMom = preStepPoint->GetMomentum();
 
     // Round to reasonable precision to create key
-    G4double entryX = std::round(entryPos.x() / mm * 10.0) / 10.0;  // 0.1 mm precision
-    G4double entryY = std::round(entryPos.y() / mm * 10.0) / 10.0;
-    G4double entryPhi = std::round(std::atan2(entryMom.y(), entryMom.x()) * 100.0) / 100.0;  // 0.01 rad precision
+    G4double entryX = entryPos.x();  // 0.1 mm precision
+    G4double entryY = entryPos.y();
 
     std::string trackLayerKey = std::to_string(eventID) + "_" + 
                                 std::to_string(trackID) + "_" + 
                                 std::to_string(layer) + "_" +
                                 std::to_string(entryX) + "_" +
-                                std::to_string(entryY) + "_" +
-                                std::to_string(entryPhi);
+                                std::to_string(entryY);
     
     // Record entry data if this is the first step in this layer
-    if (fParticleData.find(trackLayerKey) == fParticleData.end() && 
-        fProcessedTrackLayers.find(trackLayerKey) == fProcessedTrackLayers.end()) {
+    if (fParticleData.find(trackLayerKey) == fParticleData.end()) {
     
         ParticleData& data = fParticleData[trackLayerKey];
         data.eventID = eventID;
@@ -96,9 +92,7 @@ G4bool MySensitiveDetector::ProcessHits(G4Step* step, G4TouchableHistory* histor
         data.energyBefore = preStepPoint->GetKineticEnergy();
         data.momentumBefore = preStepPoint->GetMomentum();
         data.positionEnter = preStepPoint->GetPosition();
-        data.hasEntryData = true;
         data.totalEnergyDeposited = 0.0;
-        data.hasExitData = false;
         data.phiEnter = data.momentumBefore.phi();
         data.etaEnter = data.momentumBefore.eta();
     }
@@ -113,25 +107,15 @@ G4bool MySensitiveDetector::ProcessHits(G4Step* step, G4TouchableHistory* histor
         data.energyAfter = postStepPoint->GetKineticEnergy();
         data.momentumAfter = postStepPoint->GetMomentum();
         data.positionExit = postStepPoint->GetPosition();
-        data.hasExitData = true;
         data.phiExit = data.momentumAfter.phi();
         data.etaExit = data.momentumAfter.eta();
         
         // Check if particle is leaving the volume or stopping
-        G4StepStatus postStepStatus = postStepPoint->GetStepStatus();
-        bool isLeavingVolume = (postStepStatus == fGeomBoundary);
-        bool isStoppingInVolume = (track->GetTrackStatus() != fAlive);
-        
-        if (isLeavingVolume || isStoppingInVolume) {
-            // Particle has completed its passage through this layer
-            if (data.hasEntryData && data.hasExitData && data.totalEnergyDeposited > 10.0*eV) {
-                WriteParticleData(data);
-            }
-            
-            // Mark as processed and remove from active data
-            fProcessedTrackLayers.insert(trackLayerKey);
-            fParticleData.erase(it);
+        if (data.totalEnergyDeposited > 10.0*eV) {
+            WriteParticleData(data);
         }
+        fParticleData.erase(it);
+
     }
     
     return true;
@@ -139,17 +123,8 @@ G4bool MySensitiveDetector::ProcessHits(G4Step* step, G4TouchableHistory* histor
 
 void MySensitiveDetector::EndOfEvent(G4HCofThisEvent* hce)
 {
-    // Write any remaining data that wasn't written during the event
-    for (auto& pair : fParticleData) {
-        const ParticleData& data = pair.second;
-        if (data.hasEntryData && data.hasExitData && data.totalEnergyDeposited > 10.0*eV) {
-            WriteParticleData(data);
-        }
-    }
-    
-    // Clear all data structures for next event
+   
     fParticleData.clear();
-    fProcessedTrackLayers.clear();
 }
 
 void MySensitiveDetector::WriteParticleData(const ParticleData& data)
