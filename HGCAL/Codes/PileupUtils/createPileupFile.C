@@ -66,10 +66,12 @@ void createPileupFile(const char* inputFile = "PileUp_Pt_GT_pt3_Eta_15_31_Events
     TTree* outGenTree = genTree->CloneTree(-1, "fast");
     outGenTree->Write();
     
+    // Switch back to output file after CloneTree
+    fout->cd();
+    
     // Set up input branches for pixel tree
     int p_event_id, p_layer, p_i, p_j, p_ADC;
     double p_xi, p_yi, p_zi, p_theta, p_phi, p_eta, p_edep;
-
 
     pixelTree->SetBranchAddress("event_id", &p_event_id);
     pixelTree->SetBranchAddress("layer", &p_layer);
@@ -87,7 +89,6 @@ void createPileupFile(const char* inputFile = "PileUp_Pt_GT_pt3_Eta_15_31_Events
     // Set up input branches for eta-phi tree
     int e_event_id, e_layer, e_ieta, e_iphi, e_ADC;
     double e_xi, e_yi, e_zi, e_theta, e_phi, e_eta, e_edep;
-    
 
     etaPhiTree->SetBranchAddress("event_id", &e_event_id);
     etaPhiTree->SetBranchAddress("layer", &e_layer);
@@ -148,13 +149,13 @@ void createPileupFile(const char* inputFile = "PileUp_Pt_GT_pt3_Eta_15_31_Events
     
     // Event mapping tree (stores which events were combined)
     int map_event_id;
-    vector<int> evts_used;
+    vector<int>* evts_used = new vector<int>();
     TTree* evtMapTree = new TTree("EventsUsed", "Pileup event mapping");
     evtMapTree->Branch("event_id", &map_event_id, "event_id/I");
     evtMapTree->Branch("evts_used", &evts_used);
     
-    // Random generator
-    TRandom3 rng(0);
+    // Random generator — heap-allocated to avoid dangling gRandom
+    TRandom3* rng = new TRandom3(0);
     
     // Hit structure
     struct Hit {
@@ -169,23 +170,23 @@ void createPileupFile(const char* inputFile = "PileUp_Pt_GT_pt3_Eta_15_31_Events
         if (outEvt % 2000 == 0) 
             cout << "Event " << outEvt << "/" << nOutputEvents << endl;
         
-        evts_used.clear();
+        evts_used->clear();
         map_event_id = outEvt;
         
         // random nPU
         set<int> puIndices;
         while ((int)puIndices.size() < nPU) {
-            puIndices.insert(rng.Integer(eventList.size()));
+            puIndices.insert(rng->Integer(eventList.size()));
         }
 
         for (int idx : puIndices) {
-            evts_used.push_back(eventList[idx]);
+            evts_used->push_back(eventList[idx]);
         }
 
         // Combine pixel hits: key = (layer, i, j)
         map<tuple<int,int,int>, Hit> pixelHitMap;
         
-        for (int evtId : evts_used) {
+        for (int evtId : *evts_used) {
             auto it = pixelEventIndex.find(evtId);
             if (it == pixelEventIndex.end()) continue;
             
@@ -222,7 +223,7 @@ void createPileupFile(const char* inputFile = "PileUp_Pt_GT_pt3_Eta_15_31_Events
         // Combine eta-phi hits: key = (layer, ieta, iphi)
         map<tuple<int,int,int>, Hit> etaPhiHitMap;
         
-        for (int evtId : evts_used) {
+        for (int evtId : *evts_used) {
             auto it = etaPhiEventIndex.find(evtId);
             if (it == etaPhiEventIndex.end()) continue;
             
@@ -257,17 +258,29 @@ void createPileupFile(const char* inputFile = "PileUp_Pt_GT_pt3_Eta_15_31_Events
         }
         
         evtMapTree->Fill();
-        cout << "Output event " << outEvt << " processed." << endl;
-
+        
+        pixelHitMap.clear();
+        etaPhiHitMap.clear();
+        
+        if (outEvt % 1000 == 0)
+            cout << "Output event " << outEvt << " processed." << endl;
     }
     
     cout << "Writing output..." << endl;
-    outPixelTree->Write();
-    outEtaPhiTree->Write();
-    evtMapTree->Write();
     
+    // Reset input branch addresses before closing
+    pixelTree->ResetBranchAddresses();
+    etaPhiTree->ResetBranchAddresses();
+    
+    // Write everything once and close
+    fout->cd();
+    fout->Write();
     fout->Close();
     fin->Close();
+    
+    // Clean up heap-allocated objects
+    delete evts_used;
+    delete rng;
     
     cout << "Done! Created " << nOutputEvents << " pileup events with nPU=" << nPU << endl;
 }
