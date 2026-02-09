@@ -10,7 +10,7 @@ def create_directories(base_dir='data'):
 
 
 def log_scale_adc(img, adc_max=1_000_000):
-    """255 * log(1 + ADC) / log(1 + ADC_max)"""
+    """255 * log(ADC) / log(ADC_max)"""
     return (255.0 * np.log1p(np.maximum(img, 0)) / np.log1p(adc_max)).astype(np.uint8)
 
 
