@@ -328,10 +328,9 @@ void addPileupToSignal(
                                      se_phi, se_eta, se_edep, se_ADC};
 
                 // Fill energy grid for YOLO (signal only)
-                int iphi_0idx = se_iphi - 1;
                 if (se_ieta >= 0 && se_ieta < N_eta &&
-                    iphi_0idx >= 0 && iphi_0idx < N_phi) {
-                    energy[se_ieta][iphi_0idx] += se_edep;
+                    se_iphi >= 0 && se_iphi < N_phi) {
+                    energy[se_ieta][se_iphi] += se_edep;
                 }
             }
         }
