@@ -68,7 +68,7 @@ def process_root_file(in_file, prefix='evt', start_index=0, n_events=-1,
     # Vectorised load of Signal_GeneratorInfo (energy regression)
     print("Loading Signal_GeneratorInfo …")
     gen_rdf = rt.RDataFrame("Signal_GeneratorInfo", in_file)
-    gen = gen_rdf.AsNumpy(["event_id", "energy_MeV", "pt_MeV", "eta", "phi"])
+    gen = gen_rdf.AsNumpy(["event_id", "energy_MeV"])
 
     gen_lookup = {}
     for i in range(len(gen["event_id"])):
@@ -113,7 +113,6 @@ def process_root_file(in_file, prefix='evt', start_index=0, n_events=-1,
 
     # Event loop
     print("Saving events …")
-    n_skipped = 0
     for evt in range(n_events):
 
         split = split_map[evt]
@@ -134,18 +133,11 @@ def process_root_file(in_file, prefix='evt', start_index=0, n_events=-1,
         x2 = min(1.0, x_center + width / 2)
         y2 = min(1.0, y_center + height / 2)
 
-        # Recompute clipped center and size
+        # Recompute clipped centre and size
         width    = x2 - x1
         height   = y2 - y1
         x_center = x1 + width / 2
         y_center = y1 + height / 2
-
-        # Skip the events where box is too large
-        if width > 0.5 or height > 0.5:
-            print(f"  ⚠️  Event {evt}: box too large "
-                  f"({width:.3f}×{height:.3f}), skipping")
-            n_skipped += 1
-            continue
 
         with open(f"{base_dir}/labels/{split}/{fname}.txt", 'w') as f:
             f.write(f"{cls} {x_center:.6f} {y_center:.6f} "
@@ -153,17 +145,13 @@ def process_root_file(in_file, prefix='evt', start_index=0, n_events=-1,
 
         # ── Energy regression target ─────────────────────────────
         if evt in gen_lookup:
-            gi = gen_lookup[evt]
-            e_mev  = float(gen["energy_MeV"][gi])
-            pt_mev = float(gen["pt_MeV"][gi])
-            eta    = float(gen["eta"][gi])
-            phi    = float(gen["phi"][gi])
+            e_mev = float(gen["energy_MeV"][gen_lookup[evt]])
         else:
-            print(f"  ⚠️  Event {evt} missing from Signal_GeneratorInfo — writing zeros")
-            e_mev, pt_mev, eta, phi = 0.0, 0.0, 0.0, 0.0
+            print(f"  ⚠️  Event {evt} missing from Signal_GeneratorInfo — writing zero")
+            e_mev = 0.0
 
         with open(f"{base_dir}/energy/{split}/{fname}.txt", 'w') as f:
-            f.write(f"{e_mev:.6f} {pt_mev:.6f} {eta:.6f} {phi:.6f}\n")
+            f.write(f"{e_mev:.6f}\n")
 
         # ── Build 736×736×47 image (vectorised) ──────────────────
         img = np.zeros((dim1, dim2, 47), dtype=np.float32)
