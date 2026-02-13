@@ -1,185 +1,202 @@
 import ROOT as rt
 import numpy as np
 import os
-import argparse as arg
-
-parser = arg.ArgumentParser(description='Data Pipeline')
-parser.add_argument('--PU', dest='PU', type=str, default='00')
-parser.add_argument('-i', '--particle', dest='particle', type=str, default='ele')
-parser.add_argument('-n', '--number', dest='n_events', type=str, default='-1')
-parser.add_argument('--in_dir', dest='in_dir', type=str, default='a')
-parser.add_argument('--box', dest='box', type=str, default='n')
-args = parser.parse_args()
 
 
-PU = f'{int(args.PU):03d}'   
-
-if args.particle == 'ele':
-    particle = 'Electron'
-    cls = '0'
-elif args.particle == 'pos':
-    particle = 'Positron'
-    cls = '1'
-elif args.particle == 'muon':
-    particle = 'Mu_Minus'
-    cls = '0'
-elif args.particle == 'muplus':
-    particle = 'Mu_Plus'
-    cls = '1'
-else:
-    print('Wrong particle')
-    exit()
-
-if args.box not in ['s','n','l']:
-    print('Wrong box size')
-    exit()
-
-box_names = {'s':'Small','n':'Nominal','l':'Large'}
-box_name = box_names[args.box]
-
-in_dir = args.in_dir.rstrip('/')
-
-root_file = None
-for f in os.listdir(in_dir):
-    if f.endswith('.root'):
-        root_file = f
-        break
-
-if root_file is None:
-    print("No ROOT file found")
-    exit()
-
-out_dir = f'Output/Image/Regular/{particle}/PU_{PU}'
-label_out_dir = f'Output/Label/Regular/{particle}/PU_{PU}/{box_name}/labels'
-
-for s in ['Training','Validation','Testing']:
-    os.makedirs(f"{out_dir}/{s}", exist_ok=True)
-    os.makedirs(f"{label_out_dir}/{s}", exist_ok=True)
-
-dim1, dim2 = 736, 736
-
-infile = rt.TFile(f"{in_dir}/{root_file}")
-
-hitTree = infile.Get('Eta_Phi_CellWiseSegmentation')
-labelTree = infile.Get('YOLOLabels')
-
-t_events = labelTree.GetEntriesFast()
-
-if int(args.n_events) <= 0:
-    n_events = t_events
-elif int(args.n_events) > t_events:
-    print("Too many events selected")
-    exit()
-else:
-    n_events = int(args.n_events)
-
-print("Total events:", t_events)
-print("Selected events:", n_events)
+def create_directories(base_dir='data'):
+    for split in ['train', 'val', 'test']:
+        os.makedirs(f"{base_dir}/images/{split}", exist_ok=True)
+        os.makedirs(f"{base_dir}/labels/{split}", exist_ok=True)
+        os.makedirs(f"{base_dir}/energy/{split}", exist_ok=True)
 
 
-# Preload labels 
+def log_scale_adc(img, adc_max=1_000_000):
+    scaled = 255.0 * np.log1p(np.maximum(img, 0)) / np.log1p(adc_max)
+    return np.clip(scaled, 0, 255).astype(np.uint8)
 
-labels = {}
 
-for i in range(n_events):
-    labelTree.GetEntry(i)
+def collapse_layers(img):
+    h, w = img.shape[:2]
+    out = np.zeros((h, w, 16), dtype=np.float32)
+    out[:, :, :15] = img[:, :, :45].reshape(h, w, 15, 3).sum(axis=3)
+    out[:, :, 15]  = img[:, :, 45:47].sum(axis=2)
+    return out
 
-    labels[i] = {
-        "cls": str(labelTree.class_label),
-        "ieta_seed": labelTree.ieta_seed,
-        "iphi_seed": labelTree.iphi_seed,
-        "f90_eta": labelTree.f90_eta,
-        "f95_eta": labelTree.f95_eta,
-        "f98_eta": labelTree.f98_eta,
-        "f90_phi": labelTree.f90_phi,
-        "f95_phi": labelTree.f95_phi,
-        "f98_phi": labelTree.f98_phi
-    }
 
-# Loop hits ONCE
+def process_root_file(in_file, prefix='evt', start_index=0, n_events=-1,
+                      val_fraction=0.1, test_fraction=0.1, box_size='n',
+                      base_dir='data', adc_max=1_000_000, seed=42):
 
-n_hits = hitTree.GetEntries()
+    dim1, dim2 = 736, 736
+    create_directories(base_dir)
 
-current_event = -1
-img = None
+    print(f"Opening {in_file} …")
+    tmp = rt.TFile.Open(in_file, "READ")
+    t_events = tmp.Get('YOLOLabels').GetEntriesFast()
+    tmp.Close()
 
-def save_event(i, img):
+    if n_events <= 0 or n_events > t_events:
+        n_events = t_events
 
-    img = np.clip(img, 0, 255)
+    n_train = int(n_events * (1.0 - val_fraction - test_fraction))
+    n_val   = int(n_events * val_fraction)
+    n_test  = n_events - n_train - n_val
+    print(f"Events: {n_events}  ({n_train} train / {n_val} val / {n_test} test)")
 
-    img2 = np.clip(
-        img[:, :, ::3] + img[:, :, 1::3] + img[:, :, 2::3],
-        0, 255
-    )
+    # Shuffled train/val/test split map
+    shuffled = np.random.RandomState(seed).permutation(n_events)
+    split_map = {}
+    for i, idx in enumerate(shuffled):
+        if i < n_train:
+            split_map[idx] = "train"
+        elif i < n_train + n_val:
+            split_map[idx] = "val"
+        else:
+            split_map[idx] = "test"
 
-    img4 = img2.astype(np.uint8)
+    # Vectorised load of YOLOLabels
+    print("Loading YOLOLabels …")
+    lbl_rdf = rt.RDataFrame("YOLOLabels", in_file)
+    lbl = lbl_rdf.AsNumpy(["event_id", "class_label",
+                            "ieta_seed", "iphi_seed",
+                            "f90_eta", "f95_eta", "f98_eta",
+                            "f90_phi", "f95_phi", "f98_phi"])
 
-    if i < 6000:
-        split = "Training"
-    elif i < 8000:
-        split = "Validation"
-    else:
-        split = "Testing"
+    eta_key = {'s': 'f90_eta', 'n': 'f95_eta', 'l': 'f98_eta'}[box_size]
+    phi_key = {'s': 'f90_phi', 'n': 'f95_phi', 'l': 'f98_phi'}[box_size]
 
-    np.save(
-        f"{out_dir}/{split}/YOLO_Images_Regular_{particle}_PU_{PU}_Event_{i:05d}.npy",
-        img4
-    )
+    # Vectorised load of Signal_GeneratorInfo (energy regression)
+    print("Loading Signal_GeneratorInfo …")
+    gen_rdf = rt.RDataFrame("Signal_GeneratorInfo", in_file)
+    gen = gen_rdf.AsNumpy(["event_id", "energy_MeV", "pt_MeV", "eta", "phi"])
 
-    lab = labels[i]
+    gen_lookup = {}
+    for i in range(len(gen["event_id"])):
+        eid = int(gen["event_id"][i])
+        if eid < n_events:
+            gen_lookup[eid] = i
 
-    center_phi = lab["iphi_seed"] / dim2
-    center_eta = lab["ieta_seed"] / dim1
+    # Vectorised load of hits
+    print("Loading hits via RDataFrame …")
+    hit_rdf = rt.RDataFrame("Eta_Phi_CellWiseSegmentation", in_file)
+    if n_events < t_events:
+        hit_rdf = hit_rdf.Filter(f"event_id < {n_events}")
 
-    if args.box == 's':
-        width  = (2*lab["f90_eta"] + 1) / dim1
-        height = (2*lab["f90_phi"] + 1) / dim2
-    elif args.box == 'n':
-        width  = (2*lab["f95_eta"] + 1) / dim1
-        height = (2*lab["f95_phi"] + 1) / dim2
-    else:
-        width  = (2*lab["f98_eta"] + 1) / dim1
-        height = (2*lab["f98_phi"] + 1) / dim2
+    cols = hit_rdf.AsNumpy(["event_id", "ieta", "iphi", "layer", "ADC"])
+    h_evt   = cols["event_id"].astype(np.int32)
+    h_ieta  = cols["ieta"].astype(np.int32)
+    h_iphi  = cols["iphi"].astype(np.int32)
+    h_layer = cols["layer"].astype(np.int32)
+    h_adc   = cols["ADC"].astype(np.float32)
+    del cols
 
-    label_path = f"{label_out_dir}/{split}/YOLO_Images_Regular_{particle}_PU_{PU}_Event_{i:05d}.txt"
+    valid = ((h_ieta >= 0) & (h_ieta < dim1) &
+             (h_iphi >= 0) & (h_iphi < dim2) &
+             (h_layer >= 1) & (h_layer <= 47))
+    h_evt   = h_evt[valid]
+    h_ieta  = h_ieta[valid]
+    h_iphi  = h_iphi[valid]
+    h_layer = h_layer[valid] - 1
+    h_adc   = h_adc[valid]
+    del valid
 
-    with open(label_path,'w') as f:
-        f.write(
-            f'{cls} {center_phi} {center_eta} {width} {height}\n'
-        )
+    order = np.argsort(h_evt, kind='mergesort')
+    h_evt   = h_evt[order]
+    h_ieta  = h_ieta[order]
+    h_iphi  = h_iphi[order]
+    h_layer = h_layer[order]
+    h_adc   = h_adc[order]
+    del order
 
-# Main loop
+    bounds = np.searchsorted(h_evt, np.arange(n_events + 1))
+    print(f"  {len(h_evt):,} valid hits loaded.")
 
-for j in range(n_hits):
+    # Event loop
+    print("Saving events …")
+    n_skipped = 0
+    for evt in range(n_events):
 
-    hitTree.GetEntry(j)
+        split = split_map[evt]
+        fname = f"{prefix}_{start_index + evt:05d}"
 
-    evt = hitTree.event_id
+        # ── YOLO label (with clipping) ───────────────────────────
+        cls      = int(lbl["class_label"][evt])
+        x_center = float(lbl["iphi_seed"][evt]) / dim2
+        y_center = float(lbl["ieta_seed"][evt]) / dim1
+        f_eta    = float(lbl[eta_key][evt])
+        f_phi    = float(lbl[phi_key][evt])
+        width    = (2.0 * f_phi + 1.0) / dim2
+        height   = (2.0 * f_eta + 1.0) / dim1
 
-    if evt >= n_events:
-        break
+        # Clip box to stay within [0, 1]
+        x1 = max(0.0, x_center - width / 2)
+        y1 = max(0.0, y_center - height / 2)
+        x2 = min(1.0, x_center + width / 2)
+        y2 = min(1.0, y_center + height / 2)
 
-    if evt != current_event:
+        # Recompute clipped center and size
+        width    = x2 - x1
+        height   = y2 - y1
+        x_center = x1 + width / 2
+        y_center = y1 + height / 2
 
-        if current_event >= 0:
-            save_event(current_event, img)
+        # Skip the events where box is too large
+        if width > 0.5 or height > 0.5:
+            print(f"  ⚠️  Event {evt}: box too large "
+                  f"({width:.3f}×{height:.3f}), skipping")
+            n_skipped += 1
+            continue
 
-            if current_event % 1 == 0:
-                print("Processed:", current_event)
+        with open(f"{base_dir}/labels/{split}/{fname}.txt", 'w') as f:
+            f.write(f"{cls} {x_center:.6f} {y_center:.6f} "
+                    f"{width:.6f} {height:.6f}\n")
 
-        img = np.zeros((dim1, dim2, 48), dtype=np.float32)
-        current_event = evt
+        # ── Energy regression target ─────────────────────────────
+        if evt in gen_lookup:
+            gi = gen_lookup[evt]
+            e_mev  = float(gen["energy_MeV"][gi])
+            pt_mev = float(gen["pt_MeV"][gi])
+            eta    = float(gen["eta"][gi])
+            phi    = float(gen["phi"][gi])
+        else:
+            print(f"  ⚠️  Event {evt} missing from Signal_GeneratorInfo — writing zeros")
+            e_mev, pt_mev, eta, phi = 0.0, 0.0, 0.0, 0.0
 
-    ieta  = hitTree.ieta
-    iphi  = hitTree.iphi
-    layer = hitTree.layer
-    ADC   = hitTree.ADC
+        with open(f"{base_dir}/energy/{split}/{fname}.txt", 'w') as f:
+            f.write(f"{e_mev:.6f} {pt_mev:.6f} {eta:.6f} {phi:.6f}\n")
 
-    if 0 <= ieta < dim1 and 0 <= iphi < dim2 and 1 <= layer <= 47:
-        img[ieta, iphi, layer-1] += ADC
+        # ── Build 736×736×47 image (vectorised) ──────────────────
+        img = np.zeros((dim1, dim2, 47), dtype=np.float32)
+        s, e = int(bounds[evt]), int(bounds[evt + 1])
+        if s < e:
+            np.add.at(img,
+                      (h_ieta[s:e], h_iphi[s:e], h_layer[s:e]),
+                      h_adc[s:e])
 
-# Save last event
-if current_event >= 0 and current_event < n_events:
-    save_event(current_event, img)
+        img = collapse_layers(img)
+        img = log_scale_adc(img, adc_max)
+        np.save(f"{base_dir}/images/{split}/{fname}.npy", img)
 
-print("Done ✅")
+        if (evt + 1) % 100 == 0:
+            print(f"  {evt + 1} / {n_events}")
+
+    # Cleanup
+    del h_evt, h_ieta, h_iphi, h_layer, h_adc, bounds
+    del lbl, gen, gen_lookup
+
+    next_idx = start_index + n_events
+    print(f"✅ Done!  Skipped {n_skipped} pathological events.")
+    print(f"   Next start_index = {next_idx}")
+    return next_idx
+
+
+# ========================= USAGE =========================
+#
+# idx = 0
+# idx = process_root_file(
+#     "MuonM_nPU_035_Pt_015_to_250_Eta_16_29_Events_2K_Set01_Step2.root",
+#     prefix="muon", start_index=idx, n_events=-1
+# )
+# idx = process_root_file("Electron_Set01.root",  prefix="ele",    start_index=idx)
+# idx = process_root_file("Photon_Set01.root",    prefix="photon", start_index=idx)
+# idx = process_root_file("Positron_Set01.root",  prefix="pos",    start_index=idx)
