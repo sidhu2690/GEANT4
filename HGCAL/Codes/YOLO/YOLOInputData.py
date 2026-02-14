@@ -173,7 +173,6 @@ def process_root_file(in_file, prefix='evt', start_index=0, n_events=-1,
     del lbl, gen, gen_lookup
 
     next_idx = start_index + n_events
-    print(f"✅ Done!  Skipped {n_skipped} pathological events.")
     print(f"   Next start_index = {next_idx}")
     return next_idx
 
