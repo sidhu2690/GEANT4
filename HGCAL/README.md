@@ -267,4 +267,3 @@ PileUp_Pt_GT_pt{Y}_Eta_{A}_{B}_Events_{N}_Step{S}.root
 - **Geant4** (detector simulation)
 - **Pythia8** (pileup generation)
 - **Python 3** with `numpy`, `uproot` (or `ROOT` PyROOT bindings)
-- HPC cluster access with a job scheduler (e.g. HTCondor, Slurm)
