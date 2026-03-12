@@ -16,13 +16,13 @@ SIGNAL PATH                                    PILEUP PATH
 
 [1] Geant4 Signal Simulation                  [A] Pythia8 Generation
     ↓                                              ↓
-Signal_Pt_025_Eta_170_Events_2K_              Pythia8_PU_Events_20K.root
-PU_000_Set01_Step1.root                            ↓
+Signal_nPU_000_Pt_025_Eta_170_Events          Pythia8_PU_Events_20K.root
+_2K_Set01_Step1.root                               ↓
     ↓                                         [B] ROOT to Text Conversion
 [2] Segmentation                                   ↓
     ↓                                          PileUp.txt
-Signal_Pt_025_Eta_170_Events_2K_                   ↓
-PU_000_Set01_Step2.root                       [C] Geant4 Pileup Simulation
+Signal_nPU_000_Pt_025_Eta_170_Events_2K_           ↓
+Set01_Step2.root                              [C] Geant4 Pileup Simulation
                                                    ↓
                                               PileUp_Pt_GT_pt3_Eta_15_31_
                                               Events_20K_Step1.root
@@ -65,7 +65,7 @@ PU_000_Set01_Step2.root                       [C] Geant4 Pileup Simulation
 **Output:**
 ```
 Electron_Step1/
-└── Electron_Pt_025_Eta_170_Events_2K_PU_000_Set01_Step1.root
+└── Electron_nPU_000_Pt_025_Eta_170_Events_2K_Set01_Step1.root
 ```
 
 **Description:** Raw Geant4 simulation output containing all hits and energy deposits for signal particles.
@@ -79,13 +79,13 @@ Electron_Step1/
 
 **Input:**
 ```
-Electron_Pt_025_Eta_170_Events_2K_PU_000_Set01_Step1.root
+Electron_nPU_000_Pt_025_Eta_170_Events_2K_Set01_Step1.root
 ```
 
 **Output:**
 ```
 Electron_Step2/
-└── Electron_Pt_025_Eta_170_Events_2K_PU_000_Set01_Step2.root
+└── Electron_nPU_000_Pt_025_Eta_170_Events_2K_Set01_Step2.root
 ```
 
 **Description:** Digitised signal with both pixel-wise and η–φ cell-wise segmentation trees. Energy deposits are aggregated per detector cell, with ADC values computed for each cell. The original `GeneratorInfo` tree is preserved.
@@ -171,7 +171,7 @@ PileUp_Pt_GT_pt3_Eta_15_31_Events_20K_Step2.root
 
 **Inputs:**
 ```
-Signal: Electron_Pt_025_Eta_170_Events_2K_PU_000_Set01_Step2.root
+Signal: Electron_nPU_000_Pt_025_Eta_170_Events_2K_Set01_Step2.root
 Pileup: PileUp_Pt_GT_pt3_Eta_15_31_Events_20K_Step2.root
 ```
 
@@ -180,7 +180,7 @@ Pileup: PileUp_Pt_GT_pt3_Eta_15_31_Events_20K_Step2.root
 
 **Output:**
 ```
-Electron_Pt_025_Eta_170_Events_2K_PU_070_Set01_Combined.root
+Electron_nPU_070_Pt_025_Eta_170_Events_2K_Set01_Step2.root
 ```
 
 **Output trees:**
@@ -208,7 +208,7 @@ Electron_Pt_025_Eta_170_Events_2K_PU_070_Set01_Combined.root
 
 **Input:**
 ```
-Electron_Pt_025_Eta_170_Events_2K_PU_070_Set01_Combined.root
+Electron_nPU_070_Pt_025_Eta_170_Events_2K_Set01_Step2.root
 ```
 
 **Output:**
@@ -233,7 +233,7 @@ dataset/
 
 ### Signal Files
 ```
-{Particle}_Pt_{Energy}_Eta_{EtaRange}_Events_{N}_PU_{nPU}_Set{XX}_Step{S}.root
+{Particle}_nPU_{nPU}_Pt_{Energy}_Eta_{EtaRange}_Events_{N}_Set{XX}_Step{S}.root
 ```
 | Field | Example | Meaning |
 |-------|---------|---------|
@@ -244,7 +244,7 @@ dataset/
 | `nPU` | `070` | Number of pileup events (000 = pure signal) |
 | `Step` | `1` or `2` | Processing stage (1 = raw simulation, 2 = digitised) |
 
-### Pileup Files
+### Pileup File
 ```
 PileUp_Pt_GT_pt{Y}_Eta_{A}_{B}_Events_{N}_Step{S}.root
 ```
@@ -256,7 +256,7 @@ PileUp_Pt_GT_pt{Y}_Eta_{A}_{B}_Events_{N}_Step{S}.root
 
 ### Combined Files
 ```
-{Particle}_Pt_{Energy}_Eta_{EtaRange}_Events_{N}_PU_{nPU}_Set{XX}_Combined.root
+{Particle}_nPU_{nPU}_Pt_{Energy}_Eta_{EtaRange}_Events_{N}_Set{XX}_Combined.root
 ```
 
 ---
