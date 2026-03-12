@@ -131,4 +131,3 @@ rootToText.C ──► Geant4 simulation
 - **Geant4** (detector simulation)
 - **Pythia** (pileup generation)
 - **Python 3** with `numpy`, `uproot` (or `ROOT` PyROOT bindings)
-- HPC cluster access with a job scheduler (e.g. HTCondor, Slurm)
