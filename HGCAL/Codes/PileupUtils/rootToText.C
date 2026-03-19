@@ -63,6 +63,7 @@ void rootToText{
     Int_t n_particle;
     Int_t pdg_id[10000];
     Float_t pT[10000];
+    Int_t status[10000];
     Float_t eta[10000];
     Float_t phi[10000];
     
@@ -70,6 +71,7 @@ void rootToText{
     t->SetBranchAddress("n_particle", &n_particle);
     t->SetBranchAddress("pdg_id", pdg_id);
     t->SetBranchAddress("pT", pT);
+    t->SetBranchAddress("status", status);   
     t->SetBranchAddress("eta", eta);
     t->SetBranchAddress("phi", phi);
     
@@ -96,7 +98,7 @@ void rootToText{
         
         // Loop through all particles in this event
         for (int i = 0; i < n_particle; i++) {
-            if (pT[i] > 0.3 && eta[i] >= 1.5 && eta[i] <= 3.1 && isStableParticle(pdg_id[i])) {   // we are only considering the positive eta values
+            if (status[i] == 1 && pT[i] > 0.3 && eta[i] >= 1.5 && eta[i] <= 3.1 && isStableParticle(pdg_id[i])) {   
                 // Calculate theta from eta: theta = 2 * arctan(exp(-eta))
                 double theta = 2.0 * atan(exp(-eta[i]));
                 
