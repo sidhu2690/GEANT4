@@ -3,9 +3,8 @@ import numpy as np
 import os
 
 
-# ── Global normalization constant (10 lakh = 1,000,000) ──────────
-GLOBAL_ADC_MAX = 1_000_000.0   # raw ADC max for normalization
-NOISE_FLOOR    = 100.0          # raw ADC noise threshold (was 4/0.04)
+GLOBAL_ADC_MAX = 1_000_000.0   
+NOISE_FLOOR    = 0.0
 
 
 def create_directories(base_dir='data'):
@@ -22,7 +21,6 @@ def process_root_file(in_file, prefix='evt', start_index=0, n_events=-1,
 
     dim1, dim2 = 736, 736
 
-    # ── Physical ranges ───────────────────────────────────────────
     eta_0 = 1.4
     eta_n = 3.1
     phi_0 = -3.1416
@@ -30,7 +28,6 @@ def process_root_file(in_file, prefix='evt', start_index=0, n_events=-1,
 
     create_directories(base_dir)
 
-    # ── Count total events ────────────────────────────────────────
     print(f"Opening {in_file} ...")
     tmp = rt.TFile.Open(in_file, "READ")
     t_events = tmp.Get('YOLOLabels').GetEntriesFast()
@@ -46,7 +43,6 @@ def process_root_file(in_file, prefix='evt', start_index=0, n_events=-1,
     print(f"Mode: FLOAT32 LINEAR  |  GLOBAL_ADC_MAX={GLOBAL_ADC_MAX}  |  NOISE_FLOOR={NOISE_FLOOR}")
     print(f"Box: {'FIXED (w={}, h={})'.format(fixed_w, fixed_h) if fixed_box else 'VARIABLE 98% (box_size={})'.format(box_size)}")
 
-    # ── Train / val / test split ──────────────────────────────────
     shuffled = np.random.RandomState(seed).permutation(n_events)
     split_map = {}
     for i, idx in enumerate(shuffled):
@@ -57,7 +53,6 @@ def process_root_file(in_file, prefix='evt', start_index=0, n_events=-1,
         else:
             split_map[idx] = "test"
 
-    # ── Load YOLO labels ─────────────────────────────────────────
     print("Loading YOLOLabels ...")
     lbl_rdf = rt.RDataFrame("YOLOLabels", in_file)
     lbl = lbl_rdf.AsNumpy(["event_id", "class_label",
@@ -68,7 +63,6 @@ def process_root_file(in_file, prefix='evt', start_index=0, n_events=-1,
     eta_key = {'s': 'f90_eta', 'n': 'f95_eta', 'l': 'f98_eta'}[box_size]
     phi_key = {'s': 'f90_phi', 'n': 'f95_phi', 'l': 'f98_phi'}[box_size]
 
-    # ── Load energy + generator-level eta, phi ────────────────────
     print("Loading Signal_GeneratorInfo ...")
     gen_rdf = rt.RDataFrame("Signal_GeneratorInfo", in_file)
     gen = gen_rdf.AsNumpy(["event_id", "energy_MeV", "eta", "phi"])
@@ -79,7 +73,6 @@ def process_root_file(in_file, prefix='evt', start_index=0, n_events=-1,
         if eid < n_events:
             gen_lookup[eid] = i
 
-    # ── Load hits ────────────────────────────────────────────────
     print("Loading hits via RDataFrame ...")
     hit_rdf = rt.RDataFrame("Eta_Phi_CellWiseSegmentation", in_file)
     if n_events < t_events:
@@ -99,7 +92,7 @@ def process_root_file(in_file, prefix='evt', start_index=0, n_events=-1,
     h_evt   = h_evt[valid]
     h_ieta  = h_ieta[valid]
     h_iphi  = h_iphi[valid]
-    h_layer = h_layer[valid] - 1      # 0-indexed: 0..46
+    h_layer = h_layer[valid] - 1 
     h_adc   = h_adc[valid]
     del valid
 
@@ -114,11 +107,9 @@ def process_root_file(in_file, prefix='evt', start_index=0, n_events=-1,
     bounds = np.searchsorted(h_evt, np.arange(n_events + 1))
     print(f"  {len(h_evt):,} valid hits loaded.")
 
-    # ── Track global statistics for sanity ───────────────────────
     obs_max_raw = 0.0
     obs_max_after_collapse = 0.0
 
-    # ── Process each event ───────────────────────────────────────
     print("Saving events ...")
     skipped = 0
     for evt in range(n_events):
@@ -126,7 +117,6 @@ def process_root_file(in_file, prefix='evt', start_index=0, n_events=-1,
         split = split_map[evt]
         fname = f"{prefix}_{start_index + evt:05d}"
 
-        # ── Get generator-level eta, phi ─────────────────────────
         if evt not in gen_lookup:
             print(f"  Warning: Event {evt} missing from Signal_GeneratorInfo, skipping")
             skipped += 1
@@ -139,7 +129,6 @@ def process_root_file(in_file, prefix='evt', start_index=0, n_events=-1,
         if gen_phi_val > np.pi:
             gen_phi_val = gen_phi_val - 2.0 * np.pi
 
-        # ── YOLO label ───────────────────────────────────────────
         cls = int(lbl["class_label"][evt])
 
         x_center = (gen_phi_val - phi_0) / (phi_n - phi_0)
@@ -168,30 +157,24 @@ def process_root_file(in_file, prefix='evt', start_index=0, n_events=-1,
             f.write(f"{cls} {x_center:.6f} {y_center:.6f} "
                     f"{width:.6f} {height:.6f}\n")
 
-        # ── Energy target (MeV) ──────────────────────────────────
         e_mev = float(gen["energy_MeV"][eid])
 
         with open(f"{base_dir}/energy/{split}/{fname}.txt", 'w') as f:
             f.write(f"{e_mev:.6f}\n")
 
-        # ── Build 736 x 736 x 48 image (47 layers + 1 pad) FLOAT32
         img = np.zeros((dim1, dim2, 48), dtype=np.float32)
         s, e = int(bounds[evt]), int(bounds[evt + 1])
         if s < e:
-            # Raw ADC accumulation (NO * 0.04 scaling)
             np.add.at(img,
                       (h_ieta[s:e], h_iphi[s:e], h_layer[s:e]),
                       h_adc[s:e])
 
-        # ── Noise floor subtraction (smooth, differentiable) ─────
-        # Subtract NOISE_FLOOR, then clamp negatives to 0
-        # This is differentiable everywhere except exactly at threshold
+
         img = np.maximum(img - NOISE_FLOOR, 0.0)
 
         if img.size:
             obs_max_raw = max(obs_max_raw, float(img.max()))
 
-        # ── Collapse: sum every 3 layers -> 16 channels ──────────
         img = (img[:, :, ::3] +
                img[:, :, 1::3] +
                img[:, :, 2::3]).astype(np.float32)
@@ -199,11 +182,9 @@ def process_root_file(in_file, prefix='evt', start_index=0, n_events=-1,
         if img.size:
             obs_max_after_collapse = max(obs_max_after_collapse, float(img.max()))
 
-        # ── Linear normalization to [0, 1] using GLOBAL_ADC_MAX ──
-        img = img / GLOBAL_ADC_MAX                # scale to ~[0, 1]
-        img = np.clip(img, 0.0, 1.0).astype(np.float32)  # safety clip
+        img = img / GLOBAL_ADC_MAX               
+        img = np.clip(img, 0.0, 1.0).astype(np.float32)  
 
-        # ── Save as float32 .npy ─────────────────────────────────
         np.save(f"{base_dir}/images/{split}/{fname}.npy", img)
 
         if (evt + 1) % 100 == 0:
